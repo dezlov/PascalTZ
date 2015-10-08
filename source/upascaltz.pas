@@ -780,7 +780,7 @@ begin
       SetLength(FZones,Index); //Remove put information
       Raise TTZException.CreateFmt('Name on Zone line "%s" too long. (Increase source code TZ_ZONENAME_SIZE)',[AIterator.CurrentLine]);
     end;
-    Name:=StringReplace(AZone,'_',' ',[]);
+    Name:=AZone;
 
     //Now check the offset
     TmpWord:=AIterator.GetNextWord; //Offset
