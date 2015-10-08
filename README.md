@@ -20,8 +20,8 @@ This code is based on PascalTZ Version 1.0 2009.11.10 originally created by Jos√
 
 ### License
 
-[Modified](COPYING.modifiedLGPL)
-[LGPL](COPYING.LGPL) (same as the [FPC RTL](http://wiki.freepascal.org/FPC_modified_LGPL) and the Lazarus LCL).
+[Modified](COPYING.modifiedLGPL.txt)
+[LGPL](COPYING.LGPL.txt) (same as the [FPC RTL](http://wiki.freepascal.org/FPC_modified_LGPL) and the Lazarus LCL).
 
 ### Dependencies / Requirements
 
