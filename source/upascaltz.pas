@@ -112,9 +112,11 @@ type
     property ProcessedLines: integer read FLineCounter;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStringList; const AOnlyGeoZones: Boolean=true);
-    function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String;out ATimeZoneSubFix: String): TDateTime;
+    function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime; overload;
+    function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
     function LocalTimeToGMT(const ADateTime: TDateTime; const AFromZone: String): TDateTime;
-    function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone,AToZone: String;out ATimeZoneSubFix: String): TDateTime;
+    function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime; overload;
+    function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
     function ParseDatabaseFromFile(const AFileName: String): Boolean;
     function ParseDatabaseFromStream(const AStream: TStream): Boolean;
     constructor Create();
@@ -950,6 +952,13 @@ begin
   end;
 end;
 
+function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime;
+var
+  ATimeZoneSubFix: String; // dummy
+begin
+  Result := GMTToLocalTime(ADateTime, AToZone, ATimeZoneSubFix);
+end;
+
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime;
   const AToZone: String; out ATimeZoneSubFix: String): TDateTime;
 var
@@ -1035,6 +1044,13 @@ begin
   MilliSeconds:=MilliSecondOfTheSecond(ADateTime);
   Result:=TZDateToPascalDate(LocalTimeToGMT(PascalDateToTZDate(ADateTime),AFromZone));
   Result:=IncMilliSecond(Result,MilliSeconds);
+end;
+
+function TPascalTZ.TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime;
+var
+  ATimeZoneSubFix: String; // dummy
+begin
+  Result := TimeZoneToTimeZone(ADateTime, AFromZone, AToZone, ATimeZoneSubFix);
 end;
 
 function TPascalTZ.TimeZoneToTimeZone(const ADateTime: TDateTime;
