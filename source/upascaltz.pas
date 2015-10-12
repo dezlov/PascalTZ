@@ -84,6 +84,7 @@ type
     function DateTimeToStr(const ADate: TTZDateTime): String;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
+    procedure CheckCanLoadDatabase;
   protected
     FDetectInvalidLocalTimes: Boolean;
     FLineCounter: integer;
@@ -1231,12 +1232,22 @@ function TPascalTZ.ParseDatabaseFromFile(const AFileName: String): Boolean;
 var
   FileStream: TFileStream;
 begin
+  CheckCanLoadDatabase;
   FileStream:=TFileStream.Create(AFileName,fmOpenRead or fmShareDenyWrite);
   try
     Result:=ParseDatabaseFromStream(FileStream);
   finally
     FileStream.Free;
   end;
+end;
+
+procedure TPascalTZ.CheckCanLoadDatabase;
+begin
+  // TPascalTZ class was not designed to load more than one database file.
+  // Loading more than once messes up evaluation/application of timezones,
+  // so forbid it until this problem is fixed.
+  if FDatabaseLoaded then
+    raise TTZException.Create('Cannot load timezone database, it is already loaded');
 end;
 
 function TPascalTZ.ParseDatabaseFromStream(const AStream: TStream): Boolean;
@@ -1248,11 +1259,7 @@ var
   ThisLine: AsciiString;
   ParseSequence: TParseSequence;
 begin
-  // TPascalTZ class was not designed to load more than one database file.
-  // Loading more than once messes up evaluation/application of timezones,
-  // so forbid it until this problem is fixed.
-  if FDatabaseLoaded then
-    raise TTZException.Create('Cannot load timezone database, it is already loaded');
+  CheckCanLoadDatabase;
   FDatabaseLoaded := True;
 
   FileSize:=AStream.Size;
