@@ -124,6 +124,7 @@ type
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime; overload;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
     function ParseDatabaseFromFile(const AFileName: String): Boolean;
+    function ParseDatabaseFromFiles(const AFileNames: array of String): Boolean;
     function ParseDatabaseFromStream(const AStream: TStream): Boolean;
     constructor Create;
   end;
@@ -1238,6 +1239,32 @@ begin
     Result:=ParseDatabaseFromStream(FileStream);
   finally
     FileStream.Free;
+  end;
+end;
+
+function TPascalTZ.ParseDatabaseFromFiles(const AFileNames: array of String): Boolean;
+var
+  ADatabaseStream: TStringStream;
+  AFileStream: TFileStream;
+  AFileName: String;
+begin
+  CheckCanLoadDatabase;
+  ADatabaseStream := TStringStream.Create('');
+  try
+    for AFileName in AFileNames do
+    begin
+      AFileStream := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyWrite);
+      try
+        ADatabaseStream.CopyFrom(AFileStream, AFileStream.Size);
+        ADatabaseStream.WriteString(LineEnding + LineEnding);
+      finally
+        AFileStream.Free;
+      end;
+    end;
+    ADatabaseStream.Position := 0;
+    Result := ParseDatabaseFromStream(ADatabaseStream);
+  finally
+    ADatabaseStream.Free;
   end;
 end;
 
