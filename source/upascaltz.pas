@@ -81,6 +81,8 @@ type
     procedure FixUpTime(var ADate: TTZDateTime);
     procedure DateTimeToTime(const ADate: TTZDateTime; out AHour,AMinute,ASecond: BYTE);
     function DateTimeToStr(const ADate: TTZDateTime): String;
+    function GetCountZones: Integer;
+    function GetCountRules: Integer;
   protected
     FDetectInvalidLocalTimes: Boolean;
     FLineCounter: integer;
@@ -109,6 +111,8 @@ type
     function ElapsedDaysSinceADToDate(const AElapsedDays: integer): TTZDateTime;
     function ElapsedDaysSinceAD(const ADate: TTZDateTime): integer;
   public
+    property CountZones: Integer read GetCountZones;
+    property CountRules: Integer read GetCountRules;
     property ProcessedLines: integer read FLineCounter;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStringList; const AOnlyGeoZones: Boolean=true);
@@ -928,6 +932,16 @@ begin
   Result.Month:=MonthOf(ADate);
   Result.Day:=DayOf(ADate);
   Result.SecsInDay:=HourOf(ADate)*3600+MinuteOf(ADate)*60+SecondOf(ADate);
+end;
+
+function TPascalTZ.GetCountZones: Integer;
+begin
+  Result := Length(FZones);
+end;
+
+function TPascalTZ.GetCountRules: Integer;
+begin
+  Result := Length(FRules);
 end;
 
 procedure TPascalTZ.GetTimeZoneNames(const AZones: TStringList;
