@@ -1,4 +1,4 @@
-unit upascaltz;
+unit uPascalTZ;
 
 {$mode objfpc}{$H+}
 
@@ -56,7 +56,7 @@ unit upascaltz;
 interface
 
 uses
-  Classes,SysUtils,upascaltz_types,usorters;
+  Classes,SysUtils,uPascalTZ_Types,uPascalTZ_Sorters;
 
 type
   { TExceptionTZ }

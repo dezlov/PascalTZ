@@ -1,8 +1,8 @@
-unit usorters;
+unit uPascalTZ_Sorters;
 
 {$mode objfpc}{$H+}
 
-{ File: usorters.pas
+{ File: upascaltz_sorters.pas
 
   This unit contains non optimal implementations of some sort algoritms but
   designed to be easilly injected in any code that needs to sort an array or

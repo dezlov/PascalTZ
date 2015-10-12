@@ -1,4 +1,4 @@
-unit upascaltz_types;
+unit uPascalTZ_Types;
 
 {$mode objfpc}{$H+}
 
