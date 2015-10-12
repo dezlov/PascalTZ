@@ -67,6 +67,7 @@ type
 
   TPascalTZ = class(TObject)
   private
+    FDatabaseLoaded: Boolean;
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
     function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
@@ -123,7 +124,7 @@ type
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
     function ParseDatabaseFromFile(const AFileName: String): Boolean;
     function ParseDatabaseFromStream(const AStream: TStream): Boolean;
-    constructor Create();
+    constructor Create;
   end;
 
 implementation
@@ -1247,6 +1248,13 @@ var
   ThisLine: AsciiString;
   ParseSequence: TParseSequence;
 begin
+  // TPascalTZ class was not designed to load more than one database file.
+  // Loading more than once messes up evaluation/application of timezones,
+  // so forbid it until this problem is fixed.
+  if FDatabaseLoaded then
+    raise TTZException.Create('Cannot load timezone database, it is already loaded');
+  FDatabaseLoaded := True;
+
   FileSize:=AStream.Size;
   Buffer:=nil;
   GetMem(Buffer,FileSize);
@@ -1297,9 +1305,10 @@ begin
   end;
 end;
 
-constructor TPascalTZ.Create();
+constructor TPascalTZ.Create;
 begin
-  FDetectInvalidLocalTimes:=true;
+  FDetectInvalidLocalTimes := True;
+  FDatabaseLoaded := False;
 end;
 
 end.
