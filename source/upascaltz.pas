@@ -70,7 +70,7 @@ type
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
     function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
-    function FindZoneName(const AZone: ansistring): integer;
+    function FindZoneName(const AZone: String): integer;
     function ParseUntilFields(const AIterator: TTZLineIterate; out AGMTTime: Boolean): TTZDateTime;
     procedure IsGregorianLeapException(const ADate: TTZDateTime);
     function IsGregorianLeap(const ADate: TTZDateTime): Boolean;
@@ -80,7 +80,7 @@ type
     procedure SortRules();
     procedure FixUpTime(var ADate: TTZDateTime);
     procedure DateTimeToTime(const ADate: TTZDateTime; out AHour,AMinute,ASecond: BYTE);
-    function DateTimeToStr(const ADate: TTZDateTime): ansistring;
+    function DateTimeToStr(const ADate: TTZDateTime): String;
   protected
     FDetectInvalidLocalTimes: Boolean;
     FLineCounter: integer;
@@ -104,17 +104,17 @@ type
     function PascalDateToTZDate(const ADate: TDateTime): TTZDateTime;
     function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
     procedure MacroSolver(var ADate: TTZDateTime; const ADayString: AsciiString);
-    function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: ansistring): TTZDateTime;
-    function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: ansistring;out ATimeZoneName: ansistring): TTZDateTime;
+    function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
+    function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String;out ATimeZoneName: String): TTZDateTime;
     function ElapsedDaysSinceADToDate(const AElapsedDays: integer): TTZDateTime;
     function ElapsedDaysSinceAD(const ADate: TTZDateTime): integer;
   public
     property ProcessedLines: integer read FLineCounter;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStringList; const AOnlyGeoZones: Boolean=true);
-    function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: ansistring;out ATimeZoneSubFix: ansistring): TDateTime;
-    function LocalTimeToGMT(const ADateTime: TDateTime; const AFromZone: ansistring): TDateTime;
-    function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone,AToZone: ansistring;out ATimeZoneSubFix: ansistring): TDateTime;
+    function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String;out ATimeZoneSubFix: String): TDateTime;
+    function LocalTimeToGMT(const ADateTime: TDateTime; const AFromZone: String): TDateTime;
+    function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone,AToZone: String;out ATimeZoneSubFix: String): TDateTime;
     function ParseDatabaseFromFile(const AFileName: String): Boolean;
     function ParseDatabaseFromStream(const AStream: TStream): Boolean;
     constructor Create();
@@ -180,7 +180,7 @@ begin
   Result.SecsInDay:=TimeToSeconds(TmpWord);
 end;
 
-function TPascalTZ.FindZoneName(const AZone: ansistring): integer;
+function TPascalTZ.FindZoneName(const AZone: String): integer;
 var
   ZoneIndex: integer;
   j: integer;
@@ -895,7 +895,7 @@ begin
   Result:=true;
 end;
 
-function TPascalTZ.DateTimeToStr(const ADate: TTZDateTime): ansistring;
+function TPascalTZ.DateTimeToStr(const ADate: TTZDateTime): String;
 var
   H,M,S: BYTE;
 begin
@@ -951,7 +951,7 @@ begin
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime;
-  const AToZone: ansistring; out ATimeZoneSubFix: ansistring): TDateTime;
+  const AToZone: String; out ATimeZoneSubFix: String): TDateTime;
 var
   MilliSeconds: integer;
 begin
@@ -961,7 +961,7 @@ begin
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TTZDateTime;
-  const AToZone: ansistring; out ATimeZoneName: ansistring): TTZDateTime;
+  const AToZone: String; out ATimeZoneName: String): TTZDateTime;
 var
   j: integer;
   ZoneIndex: integer;
@@ -1028,7 +1028,7 @@ begin
 end;
 
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TDateTime;
-  const AFromZone: ansistring): TDateTime;
+  const AFromZone: String): TDateTime;
 var
   MilliSeconds: integer;
 begin
@@ -1038,7 +1038,7 @@ begin
 end;
 
 function TPascalTZ.TimeZoneToTimeZone(const ADateTime: TDateTime;
-  const AFromZone, AToZone: ansistring; out ATimeZoneSubFix: ansistring
+  const AFromZone, AToZone: String; out ATimeZoneSubFix: String
   ): TDateTime;
 var
   Tmp: TTZDateTime;
@@ -1050,7 +1050,7 @@ begin
 end;
 
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TTZDateTime;
-  const AFromZone: ansistring): TTZDateTime;
+  const AFromZone: String): TTZDateTime;
 var
   ZoneIndex,RuleIndex: integer;
   ApplyRuleName: AsciiString;
