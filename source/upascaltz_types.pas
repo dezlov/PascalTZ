@@ -14,8 +14,14 @@ uses
   Classes, SysUtils; 
 
 const
+  // Longest 'backward' zone name is 32 characters:
+  //   "America/Argentina/ComodRivadavia"
+  // Longest 'current' zones names are 30 characters:
+  //   "America/Argentina/Buenos_Aires"
+  //   "America/Argentina/Rio_Gallegos"
+  //   "America/North_Dakota/New_Salem"
   TZ_RULENAME_SIZE=12;
-  TZ_ZONENAME_SIZE=30;
+  TZ_ZONENAME_SIZE=32; // max 32 characters is 'backward' compatible!
   TZ_TIMEZONELETTERS_SIZE=8;
   TZ_ONRULE_SIZE=7;
 
