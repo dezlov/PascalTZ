@@ -59,10 +59,6 @@ uses
   Classes,SysUtils,uPascalTZ_Types,uPascalTZ_Sorters;
 
 type
-  { TExceptionTZ }
-
-  TTZException = class(Exception);
-
   { TPascalTZ }
 
   TPascalTZ = class(TObject)

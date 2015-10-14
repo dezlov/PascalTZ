@@ -93,6 +93,11 @@ public
   constructor Create(const ALine: AsciiString; const AIterateChar: AsciiChar=#32);
 end;
 
+{ TExceptionTZ }
+
+TTZException = class(Exception);
+
+
 implementation
 
 const
