@@ -240,7 +240,6 @@ begin
       if (PreParseLine[1]=#32) or (PreParseLine[1]=#9) then begin
         //Its a continuation
         if ParseStatusTAG<>'Zone' then begin
-          Parser.Free;
           Raise TTZException.CreateFmt('Continue error at line: "%s" (No Zone)',[ALine]);
         end;
         ZoneContinue:=true;
@@ -261,7 +260,6 @@ begin
       end else if ParseStatusTAG='Link' then begin
 
       end else begin
-        Parser.Free;
         Raise TTZException.CreateFmt('Parsing error at line: "%s"',[ALine]);
       end;
     finally
