@@ -81,9 +81,10 @@ type
     FRules: array of TTZRules;
     FZones: array of TTzZone;
     Function LookupRuleNonIndexed(const AName: AsciiString): Integer;
-    procedure ParseLine(const ALine: AsciiString;const AParseSequence: TParseSequence);
-    procedure ParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
-    procedure ParseRule(const AIterator: TTZLineIterate);
+    procedure ParseLine(const ALineNumber: Integer; const ALine: AsciiString; const AParseSequence: TParseSequence);
+    procedure BareParseLine(const ALine: AsciiString; const AParseSequence: TParseSequence);
+    procedure BareParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
+    procedure BareParseRule(const AIterator: TTZLineIterate);
     function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
     function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String;out ATimeZoneName: String): TTZDateTime;
   public
@@ -213,7 +214,18 @@ begin
   end;
 end;
 
-procedure TPascalTZ.ParseLine(const ALine: AsciiString;const AParseSequence: TParseSequence);
+procedure TPascalTZ.ParseLine(const ALineNumber: Integer;
+  const ALine: AsciiString; const AParseSequence: TParseSequence);
+begin
+  try
+    BareParseLine(ALine, AParseSequence);
+  except on E: Exception do
+    raise TTZException.CreateFmt('Parse error at line %s: "%s" [%s]',
+      [IntToStr(ALineNumber), ALine, E.Message]);
+  end;
+end;
+
+procedure TPascalTZ.BareParseLine(const ALine: AsciiString; const AParseSequence: TParseSequence);
 var
   j: integer;
   Parser: TTZLineIterate;
@@ -240,7 +252,7 @@ begin
       if (PreParseLine[1]=#32) or (PreParseLine[1]=#9) then begin
         //Its a continuation
         if ParseStatusTAG<>'Zone' then begin
-          Raise TTZException.CreateFmt('Continue error at line: "%s" (No Zone)',[ALine]);
+          raise TTZException.CreateFmt('Continuation for line tag "%s" is not allowed', [ParseStatusTAG]);
         end;
         ZoneContinue:=true;
       end else begin
@@ -251,16 +263,16 @@ begin
           if not ZoneContinue then begin
             ParseStatusPreviousZone:=Parser.GetNextWord;
           end;
-          ParseZone(Parser,ParseStatusPreviousZone);
+          BareParseZone(Parser,ParseStatusPreviousZone);
         end;
       end else if (ParseStatusTAG='Rule') then begin
         if (AParseSequence=TTzParseRule) then begin
-          ParseRule(Parser);
+          BareParseRule(Parser);
         end;
       end else if ParseStatusTAG='Link' then begin
 
       end else begin
-        Raise TTZException.CreateFmt('Parsing error at line: "%s"',[ALine]);
+        raise TTZException.CreateFmt('Unknown line tag "%s"', [ParseStatusTAG]);
       end;
     finally
       Parser.Free;
@@ -268,7 +280,7 @@ begin
   end;
 end;
 
-procedure TPascalTZ.ParseZone(const AIterator: TTZLineIterate;
+procedure TPascalTZ.BareParseZone(const AIterator: TTZLineIterate;
   const AZone: AsciiString);
 var
   Index: integer;
@@ -330,7 +342,7 @@ begin
   end;
 end;
 
-procedure TPascalTZ.ParseRule(const AIterator: TTZLineIterate);
+procedure TPascalTZ.BareParseRule(const AIterator: TTZLineIterate);
 var
   Index: integer;
   TmpWord: AsciiString;
@@ -690,7 +702,7 @@ begin
         if (Buffer[LineBegin+LineSize]=#13) or (Buffer[LineBegin+LineSize]=#10) then begin
           SetLength(ThisLine,LineSize);
           Move(Buffer[LineBegin],ThisLine[1],LineSize);
-          ParseLine(ThisLine,ParseSequence);
+          ParseLine(FLineCounter, ThisLine, ParseSequence);
           inc(LineBegin,LineSize);
           LineSize:=0;
           while (LineBegin<FileSize) and ((Buffer[LineBegin]=#13) or (Buffer[LineBegin]=#10)) do begin
@@ -707,7 +719,7 @@ begin
         inc(FLineCounter);
         SetLength(ThisLine,LineSize);
         Move(Buffer[LineBegin],ThisLine[1],LineSize);
-        ParseLine(ThisLine,ParseSequence);
+        ParseLine(FLineCounter, ThisLine, ParseSequence);
       end;
       if ParseSequence=TTzParseRule then begin
         //Sort the rules...
