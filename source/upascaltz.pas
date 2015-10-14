@@ -81,9 +81,9 @@ type
     FRules: array of TTZRules;
     FZones: array of TTzZone;
     Function LookupRuleNonIndexed(const AName: AsciiString): Integer;
-    function ParseLine(const ALine: AsciiString;const AParseSequence: TParseSequence): boolean;
-    function ParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString): boolean;
-    function ParseRule(const AIterator: TTZLineIterate): Boolean;
+    procedure ParseLine(const ALine: AsciiString;const AParseSequence: TParseSequence);
+    procedure ParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
+    procedure ParseRule(const AIterator: TTZLineIterate);
     function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
     function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String;out ATimeZoneName: String): TTZDateTime;
   public
@@ -213,7 +213,7 @@ begin
   end;
 end;
 
-function TPascalTZ.ParseLine(const ALine: AsciiString;const AParseSequence: TParseSequence): boolean;
+procedure TPascalTZ.ParseLine(const ALine: AsciiString;const AParseSequence: TParseSequence);
 var
   j: integer;
   Parser: TTZLineIterate;
@@ -265,14 +265,11 @@ begin
     finally
       Parser.Free;
     end;
-    Result:=true;
-  end else begin
-    Result:=true;
   end;
 end;
 
-function TPascalTZ.ParseZone(const AIterator: TTZLineIterate;
-  const AZone: AsciiString): boolean;
+procedure TPascalTZ.ParseZone(const AIterator: TTZLineIterate;
+  const AZone: AsciiString);
 var
   Index: integer;
   RuleName: AsciiString;
@@ -331,10 +328,9 @@ begin
     //defaults:      YEAR Jan   1   0:00:00
     RuleValidUntil:=ParseUntilFields(AIterator,RuleValidUntilGMT);
   end;
-  Result:=true;
 end;
 
-function TPascalTZ.ParseRule(const AIterator: TTZLineIterate): Boolean;
+procedure TPascalTZ.ParseRule(const AIterator: TTZLineIterate);
 var
   Index: integer;
   TmpWord: AsciiString;
@@ -399,7 +395,6 @@ begin
     TimeZoneLetters:=AIterator.GetNextWord;
     if TimeZoneLetters='-' Then TimeZoneLetters:='';
   end;
-  Result:=true;
 end;
 
 function TPascalTZ.GetCountZones: Integer;
