@@ -331,6 +331,7 @@ begin
       for k := j+1 to Length(ADayString) do begin
         if not (ADayString[k] in ['<','=','>']) then begin
           ConditionalEnd:=k;
+          Break;
         end;
       end;
       break;
@@ -341,7 +342,7 @@ begin
       Raise TTZException.Create('Macro expansion not possible: Unrecognised conditional part');
     end;
     ConditionA:=Copy(ADayString,1,ConditionalBegin-1);
-    ConditionOp:=Copy(ADayString,ConditionalBegin,ConditionalEnd-ConditionalBegin-1);
+    ConditionOp:=Copy(ADayString,ConditionalBegin,ConditionalEnd-ConditionalBegin);
     ConditionB:=Copy(ADayString,ConditionalEnd,Length(ADayString)-ConditionalEnd+1);
     WeekDay:=DayNameToNumber(ConditionA);
     j:=StrToInt(ConditionB);
