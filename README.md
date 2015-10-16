@@ -11,7 +11,14 @@ It is designed to:
 - Detect invalid times in the conversion process.
 - Be updateable simply by upgrading the [Time Zone Database](https://www.iana.org/time-zones).
 
-This code is based on PascalTZ Version 1.0 2009.11.10 originally created by José Mejuto.
+This code is based on PascalTZ Version 1.0 2009.11.10 originally created by *José Mejuto*.
+
+The maintenance of this package has been taken up by *Denis Kozlov* in 2015 with key goals:
+
+1. Identify and fix all data parsing and time zone conversion problems (yes, plenty).
+2. Refactor the existing code to make debugging and maintenance easier.
+3. Expand functionality for more user-friendly workflows.
+4. Add test cases and a test framework.
 
 Please see [USAGE.md](USAGE.md) for general usage instructions and known issues.
 
