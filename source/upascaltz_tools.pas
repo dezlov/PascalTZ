@@ -1,5 +1,18 @@
 unit uPascalTZ_Tools;
 
+{*******************************************************************************
+This file is a part of PascalTZ package:
+  https://github.com/dezlov/pascaltz
+
+License:
+  GNU Library General Public License (LGPL) with a special exception.
+  Read accompanying README and COPYING files for more details.
+
+Authors:
+  2009 - José Mejuto
+  2015 - Denis Kozlov
+*******************************************************************************}
+
 {$mode objfpc}{$H+}
 
 interface

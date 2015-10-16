@@ -1,14 +1,19 @@
 unit uPascalTZ;
 
-{$mode objfpc}{$H+}
+{*******************************************************************************
+This file is a part of PascalTZ package:
+  https://github.com/dezlov/pascaltz
 
-{
-  File: upascaltz.pas
+License:
+  GNU Library General Public License (LGPL) with a special exception.
+  Read accompanying README and COPYING files for more details.
 
-  License: The same as freepascal packages (basically LGPL)
-
+Authors:
   2009 - José Mejuto
-}
+  2015 - Denis Kozlov
+*******************************************************************************}
+
+{$mode objfpc}{$H+}
 
 interface
 
