@@ -474,10 +474,11 @@ var
   ZoneIndex: integer;
   RuleIndex: integer;
   ApplyRuleName: AsciiString;
-  RuleBeginDate,RuleEndDate: TTZDateTime;
+  RuleBeginDate,RuleEndDate,UsedRuleBeginDate: TTZDateTime;
   SaveTime: integer;
   RuleLetters: AsciiString;
   ZoneNameCut: integer;
+  UsedRuleIndex: Integer;
 begin
   //Find zone matching target...
   ZoneIndex:=FindZoneName(AZone);
@@ -501,6 +502,7 @@ begin
   ApplyRuleName:=FRules[RuleIndex].Name;
   j:=RuleIndex;
   SaveTime:=0;
+  UsedRuleIndex:=-1;
   while (j<=High(FRules)) and (FRules[j].Name=ApplyRuleName) do begin
     if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then begin
       //The year is in the rule range, so discard year information...
@@ -516,10 +518,23 @@ begin
       RuleEndDate.Day:=31;
       RuleEndDate.SecsInDay:=SecsPerDay;
 
-      if (CompareDates(ADateTime,RuleBeginDate)>-1) and
-         (CompareDates(ADateTime,RuleEndDate)<1) then begin
-        SaveTime:=FRules[j].SaveTime;
-        RuleLetters:=FRules[j].TimeZoneLetters;
+      // Ensure that we use the latest applicable rule, once it has passed the initial range.
+      // When rules are sorted by year and then by month, it doesn't guarantee that
+      // all applicable rules for the year in question are also in ascending order by month.
+      // For example: Rule1 = 2000-2010 Oct; Rule2 = 2005-2010 Mar; for years 2005-2010
+      // both rules are applicable but they are not in ascending order by month (Oct, Mar),
+      // so simply using the last rule in the list will not work!
+      if (CompareDates(ADateTime,RuleBeginDate)>=0) and
+         (CompareDates(ADateTime,RuleEndDate)<=0) then
+      begin
+        // "UsedRuleBeginDate" not initialized is ok by design!
+        if (UsedRuleIndex < 0) or (CompareDates(RuleBeginDate, UsedRuleBeginDate)>=0) then
+        begin
+          SaveTime:=FRules[j].SaveTime;
+          RuleLetters:=FRules[j].TimeZoneLetters;
+          UsedRuleIndex := j;
+          UsedRuleBeginDate := RuleBeginDate;
+        end;
       end;
     end;
     inc(j);
