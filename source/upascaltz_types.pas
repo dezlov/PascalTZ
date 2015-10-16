@@ -55,7 +55,7 @@ TTZDateTime=record
   SecsInDay: integer;
 end;
 
-TTZRules=record
+TTZRule=record
   Name: TTZRuleName;
   FromYear: integer;
   ToYear: integer;

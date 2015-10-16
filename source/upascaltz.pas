@@ -78,7 +78,7 @@ type
     FDetectInvalidLocalTimes: Boolean;
     FLineCounter: integer;
     FCurrentLine: AsciiString;
-    FRules: array of TTZRules;
+    FRules: array of TTZRule;
     FZones: array of TTzZone;
     Function LookupRuleNonIndexed(const AName: AsciiString): Integer;
     procedure ParseLine(const ALineNumber: Integer; const ALine: AsciiString; const AParseSequence: TParseSequence);
@@ -186,7 +186,7 @@ end;
 
 procedure TPascalTZ.fSortSwapRule(const AIndex, BIndex: SizeInt);
 var
-  Temporal: TTZRules;
+  Temporal: TTZRule;
 begin
   Temporal:=FRules[AIndex];
   FRules[AIndex]:=FRules[BIndex];
