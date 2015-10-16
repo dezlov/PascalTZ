@@ -87,6 +87,10 @@ type
     procedure BareParseRule(const AIterator: TTZLineIterate);
     function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
     function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String;out ATimeZoneName: String): TTZDateTime;
+    function Convert(const ADateTime: TTZDateTime; const AZone: String;
+      const AConvertToZone: Boolean): TTZDateTime; overload;
+    function Convert(const ADateTime: TTZDateTime; const AZone: String;
+      const AConvertToZone: Boolean; out ATimeZoneName: String): TTZDateTime; overload;
   public
     property CountZones: Integer read GetCountZones;
     property CountRules: Integer read GetCountRules;
@@ -454,6 +458,101 @@ begin
   end;
 end;
 
+function TPascalTZ.Convert(const ADateTime: TTZDateTime;
+  const AZone: String; const AConvertToZone: Boolean): TTZDateTime;
+var
+  ATimeZoneName: String; // dummy
+begin
+  Result := Convert(ADateTime, AZone, AConvertToZone, ATimeZoneName);
+end;
+
+function TPascalTZ.Convert(const ADateTime: TTZDateTime;
+  const AZone: String; const AConvertToZone: Boolean;
+  out ATimeZoneName: String): TTZDateTime;
+var
+  j: integer;
+  ZoneIndex: integer;
+  RuleIndex: integer;
+  ApplyRuleName: AsciiString;
+  RuleBeginDate,RuleEndDate: TTZDateTime;
+  SaveTime: integer;
+  RuleLetters: AsciiString;
+  ZoneNameCut: integer;
+begin
+  //Find zone matching target...
+  ZoneIndex:=FindZoneName(AZone);
+  // Now check which zone configuration line matches the given date.
+  ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
+  RuleIndex:=FZones[ZoneIndex].RuleIndex;
+
+  if RuleIndex=-1 then begin
+    //No rule is applied, so use the zone fixed offset
+    Result:=ADateTime;
+    if AConvertToZone then
+      Inc(Result.SecsInDay,FZones[ZoneIndex].RuleFixedOffset+FZones[ZoneIndex].Offset)
+    else
+      Dec(Result.SecsInDay,FZones[ZoneIndex].RuleFixedOffset+FZones[ZoneIndex].Offset);
+    ATimeZoneName:=FZones[ZoneIndex].TimeZoneLetters;
+    FixUpTime(Result);
+    exit;
+  end;
+
+  //Now we have the valid rule index...
+  ApplyRuleName:=FRules[RuleIndex].Name;
+  j:=RuleIndex;
+  SaveTime:=0;
+  while (j<=High(FRules)) and (FRules[j].Name=ApplyRuleName) do begin
+    if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then begin
+      //The year is in the rule range, so discard year information...
+      RuleBeginDate.Year:=ADateTime.Year;
+      RuleBeginDate.Month:=FRules[j].InMonth;
+      MacroSolver(RuleBeginDate,FRules[j].OnRule);
+      RuleBeginDate.SecsInDay:=FRules[j].AtHourTime;
+      if not AConvertToZone then
+        Inc(RuleBeginDate.SecsInDay, FZones[ZoneIndex].Offset);
+
+      RuleEndDate.Year:=ADateTime.Year;
+      RuleEndDate.Month:=12;
+      RuleEndDate.Day:=31;
+      RuleEndDate.SecsInDay:=SecsPerDay;
+
+      if (CompareDates(ADateTime,RuleBeginDate)>-1) and
+         (CompareDates(ADateTime,RuleEndDate)<1) then begin
+        SaveTime:=FRules[j].SaveTime;
+        RuleLetters:=FRules[j].TimeZoneLetters;
+      end;
+    end;
+    inc(j);
+  end;
+
+  Result:=ADateTime;
+  if AConvertToZone then
+    Inc(Result.SecsInDay,SaveTime+FZones[ZoneIndex].Offset)
+  else
+    Dec(Result.SecsInDay,SaveTime+FZones[ZoneIndex].Offset);
+  FixUpTime(Result);
+
+  if not AConvertToZone then
+  if FDetectInvalidLocalTimes then begin
+    if CompareDates(ADateTime,Convert(Result,AZone,not AConvertToZone))<>0 then begin
+      Raise TTZException.CreateFmt('The time %s does not exists in %s',[DateTimeToStr(ADateTime),AZone]);
+    end;
+  end;
+
+  ATimeZoneName:=format(FZones[ZoneIndex].TimeZoneLetters,[RuleLetters]);
+  //When timezonename is XXX/YYY XXX is no daylight and YYY is daylight saving.
+  ZoneNameCut:=Pos('/',ATimeZoneName);
+  if ZoneNameCut>0 then begin
+    if SaveTime=0 then begin
+      //Use the XXX
+      ATimeZoneName:=Copy(ATimeZoneName,1,ZoneNameCut-1);
+    end else begin
+      //Use the YYY
+      ATimeZoneName:=Copy(ATimeZoneName,ZoneNameCut+1,Length(ATimeZoneName)-ZoneNameCut);
+    end;
+  end;
+end;
+
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime;
 var
   ATimeZoneSubFix: String; // dummy
@@ -473,69 +572,8 @@ end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TTZDateTime;
   const AToZone: String; out ATimeZoneName: String): TTZDateTime;
-var
-  j: integer;
-  ZoneIndex: integer;
-  RuleIndex: integer;
-  ApplyRuleName: AsciiString;
-  RuleBeginDate,RuleEndDate: TTZDateTime;
-  SaveTime: integer;
-  RuleLetters: AsciiString;
-  ZoneNameCut: integer;
 begin
-  //Find zone matching target...
-  ZoneIndex:=FindZoneName(AToZone);
-  // Now check which zone configuration line matches the given date.
-  ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
-  RuleIndex:=FZones[ZoneIndex].RuleIndex;
-  if RuleIndex=-1 then begin
-    //No rule is applied, so use the zone fixed offset
-    Result:=ADateTime;
-    inc(Result.SecsInDay,FZones[ZoneIndex].RuleFixedOffset+FZones[ZoneIndex].Offset);
-    ATimeZoneName:=FZones[ZoneIndex].TimeZoneLetters;
-    FixUpTime(Result);
-    exit;
-  end;
-  //Now we have the valid rule index...
-  ApplyRuleName:=FRules[RuleIndex].Name;
-  j:=RuleIndex;
-  SaveTime:=0;
-  while (j<=High(FRules)) and (FRules[j].Name=ApplyRuleName) do begin
-    if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then begin
-      //The year is in the rule range, so discard year information...
-      RuleBeginDate.Year:=ADateTime.Year;
-      RuleBeginDate.Month:=FRules[j].InMonth;
-      MacroSolver(RuleBeginDate,FRules[j].OnRule);
-      RuleBeginDate.SecsInDay:=FRules[j].AtHourTime;
-
-      RuleEndDate.Year:=ADateTime.Year;
-      RuleEndDate.Month:=12;
-      RuleEndDate.Day:=31;
-      RuleEndDate.SecsInDay:=86400;
-
-      if (CompareDates(ADateTime,RuleBeginDate)>-1) and
-         (CompareDates(ADateTime,RuleEndDate)<1) then begin
-        SaveTime:=FRules[j].SaveTime;
-        RuleLetters:=FRules[j].TimeZoneLetters;
-      end;
-    end;
-    inc(j);
-  end;
-  Result:=ADateTime;
-  inc(Result.SecsInDay,SaveTime+FZones[ZoneIndex].Offset);
-  ATimeZoneName:=format(FZones[ZoneIndex].TimeZoneLetters,[RuleLetters]);
-  //When timezonename is XXX/YYY XXX is no daylight and YYY is daylight saving.
-  ZoneNameCut:=Pos('/',ATimeZoneName);
-  if ZoneNameCut>0 then begin
-    if SaveTime=0 then begin
-      //Use the XXX
-      ATimeZoneName:=Copy(ATimeZoneName,1,ZoneNameCut-1);
-    end else begin
-      //Use the YYY
-      ATimeZoneName:=Copy(ATimeZoneName,ZoneNameCut+1,Length(ATimeZoneName)-ZoneNameCut);
-    end;
-  end;
-  FixUpTime(Result);
+  Result := Convert(ADateTime, AToZone, True, ATimeZoneName);
 end;
 
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TDateTime;
@@ -546,6 +584,12 @@ begin
   MilliSeconds:=MilliSecondOfTheSecond(ADateTime);
   Result:=TZDateToPascalDate(LocalTimeToGMT(PascalDateToTZDate(ADateTime),AFromZone));
   Result:=IncMilliSecond(Result,MilliSeconds);
+end;
+
+function TPascalTZ.LocalTimeToGMT(const ADateTime: TTZDateTime;
+  const AFromZone: String): TTZDateTime;
+begin
+  Result := Convert(ADateTime, AFromZone, False);
 end;
 
 function TPascalTZ.TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime;
@@ -565,62 +609,6 @@ begin
   Tmp:=LocalTimeToGMT(Tmp,AFromZone);
   Tmp:=GMTToLocalTime(Tmp,AToZone,ATimeZoneSubFix);
   Result:=TZDateToPascalDate(Tmp);
-end;
-
-function TPascalTZ.LocalTimeToGMT(const ADateTime: TTZDateTime;
-  const AFromZone: String): TTZDateTime;
-var
-  ZoneIndex,RuleIndex: integer;
-  ApplyRuleName: AsciiString;
-  RuleBeginDate,RuleEndDate: TTZDateTime;
-  SaveTime: integer;
-  j: integer;
-begin
-  //Find zone matching target...
-  ZoneIndex:=FindZoneName(AFromZone);
-  // Now check which zone configuration line matches the given date.
-  ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
-  RuleIndex:=FZones[ZoneIndex].RuleIndex;
-  if RuleIndex=-1 then begin
-    //No rule is applied, so use the zone fixed offset
-    Result:=ADateTime;
-    Dec(Result.SecsInDay,FZones[ZoneIndex].RuleFixedOffset+FZones[ZoneIndex].Offset);
-    FixUpTime(Result);
-    exit;
-  end;
-  //Now we have the valid rule index...
-  ApplyRuleName:=FRules[RuleIndex].Name;
-  j:=RuleIndex;
-  SaveTime:=0;
-  while (j<=High(FRules)) and (FRules[j].Name=ApplyRuleName) do begin
-    if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then begin
-      //The year is in the rule range, so discard year information...
-      RuleBeginDate.Year:=ADateTime.Year;
-      RuleBeginDate.Month:=FRules[j].InMonth;
-      MacroSolver(RuleBeginDate,FRules[j].OnRule);
-      RuleBeginDate.SecsInDay:=FRules[j].AtHourTime+FZones[ZoneIndex].Offset;
-
-      RuleEndDate.Year:=ADateTime.Year;
-      RuleEndDate.Month:=12;
-      RuleEndDate.Day:=31;
-      RuleEndDate.SecsInDay:=SecsPerDay;
-
-      if (CompareDates(ADateTime,RuleBeginDate)>-1) and
-         (CompareDates(ADateTime,RuleEndDate)<1) then begin
-        SaveTime:=FRules[j].SaveTime;
-      end;
-    end;
-    inc(j);
-  end;
-  Result:=ADateTime;
-  Dec(Result.SecsInDay,SaveTime+FZones[ZoneIndex].Offset);
-  FixUpTime(Result);
-  if FDetectInvalidLocalTimes then begin
-    //Applyrulename here is a dummy variable
-    if CompareDates(ADateTime,GMTToLocalTime(Result,AFromZone,ApplyRuleName))<>0 then begin
-      Raise TTZException.CreateFmt('The time %s does not exists in %s',[DateTimeToStr(ADateTime),AFromZone]);
-    end;
-  end;
 end;
 
 function TPascalTZ.ParseDatabaseFromFile(const AFileName: String): Boolean;
