@@ -11,7 +11,7 @@ unit uPascalTZ_Types;
 interface
 
 uses
-  Classes, SysUtils; 
+  Classes, SysUtils, FGL;
 
 const
   // Longest 'backward' zone name is 32 characters:
@@ -55,7 +55,8 @@ TTZDateTime=record
   SecsInDay: integer;
 end;
 
-TTZRule=record
+TTZRule=class
+public
   Name: TTZRuleName;
   FromYear: integer;
   ToYear: integer;
@@ -67,7 +68,10 @@ TTZRule=record
   TimeZoneLetters: TTZTimeZoneLetters;
 end;
 
-TTzZone=record
+TTZRuleList = specialize TFPGObjectList<TTZRule>;
+
+TTzZone=class
+public
   Name: TTZZoneName;
   Offset: integer; //seconds
   RuleIndex: integer; //Rule index in rules array.
@@ -76,6 +80,8 @@ TTzZone=record
   RuleValidUntilGMT: Boolean;
   RuleValidUntil: TTZDateTime;
 end;
+
+TTZZoneList = specialize TFPGObjectList<TTZZone>;
 
 { TTZLineIterate }
 

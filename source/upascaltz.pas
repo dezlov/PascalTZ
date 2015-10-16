@@ -78,8 +78,8 @@ type
     FDetectInvalidLocalTimes: Boolean;
     FLineCounter: integer;
     FCurrentLine: AsciiString;
-    FRules: array of TTZRule;
-    FZones: array of TTzZone;
+    FRules: TTZRuleList;
+    FZones: TTZZoneList;
     Function LookupRuleNonIndexed(const AName: AsciiString): Integer;
     procedure ParseLine(const ALineNumber: Integer; const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseLine(const ALine: AsciiString; const AParseSequence: TParseSequence);
@@ -107,6 +107,7 @@ type
     function ParseDatabaseFromFiles(const AFileNames: array of String): Boolean;
     function ParseDatabaseFromStream(const AStream: TStream): Boolean;
     constructor Create;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -122,7 +123,7 @@ var
   j: integer;
 begin
   ZoneIndex:=-1;
-  for j := 0 to High(FZones) do begin
+  for j := 0 to FZones.Count-1 do begin
     if FZones[j].Name=AZone then begin
       ZoneIndex:=j;
       Break;
@@ -143,7 +144,7 @@ begin
   AZone:=FZones[ZoneIndexStart].Name;
   j:=ZoneIndexStart;
   Found:=false;
-  while (j<=High(FZones)) and (FZones[j].Name=AZone) do begin
+  while (j<=FZones.Count-1) and (FZones[j].Name=AZone) do begin
     if CompareDates(FZones[j].RuleValidUntil, ADateTime)=1 then begin
       Found:=true;
       break;
@@ -185,12 +186,8 @@ begin
 end;
 
 procedure TPascalTZ.fSortSwapRule(const AIndex, BIndex: SizeInt);
-var
-  Temporal: TTZRule;
 begin
-  Temporal:=FRules[AIndex];
-  FRules[AIndex]:=FRules[BIndex];
-  FRules[BIndex]:=Temporal;
+  FRules.Exchange(AIndex, BIndex);
 end;
 
 procedure TPascalTZ.SortRules();
@@ -198,7 +195,7 @@ var
   Sorter: THeapSort;
 begin
   //Sort the rules by name
-  Sorter:=THeapSort.Create(Length(FRules));
+  Sorter:=THeapSort.Create(FRules.Count);
   Sorter.OnCompareOfClass:=@fSortCompareRule;
   Sorter.OnSwapOfClass:=@fSortSwapRule;
   Sorter.Sort();
@@ -210,7 +207,7 @@ var
   j: integer;
 begin
   Result:=-1;
-  for j := 0 to High(FRules) do begin
+  for j := 0 to FRules.Count-1 do begin
     if FRules[j].Name=AName then begin
       Result:=j;
       break;
@@ -291,58 +288,60 @@ var
   RuleName: AsciiString;
   RuleTmpIndex: integer;
   TmpWord: AsciiString;
+  NewZone: TTZZone;
 begin
-  Index:=Length(FZones);
-  SetLength(FZones,Index+1);
-  with FZones[Index] do begin
+  NewZone := TTZZone.Create;
+  Index := FZones.Add(NewZone); // list owns the new item
+
+  begin
     //First is the zone name
     if Length(AZone)>TZ_ZONENAME_SIZE then begin
-      SetLength(FZones,Index); //Remove put information
+      FZones.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Name on Zone line "%s" too long. (Increase source code TZ_ZONENAME_SIZE)',[AIterator.CurrentLine]);
     end;
-    Name:=AZone;
+    NewZone.Name:=AZone;
 
     //Now check the offset
     TmpWord:=AIterator.GetNextWord; //Offset
-    Offset:=TimeToSeconds(TmpWord);
+    NewZone.Offset:=TimeToSeconds(TmpWord);
 
     //Now check the rules...
     RuleName:=AIterator.GetNextWord;
     if RuleName='' Then begin
-      SetLength(FZones,Index); //Remove put information
+      FZones.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Rule on Zone line "%s" empty.',[AIterator.CurrentLine]);
     end;
     if RuleName='-' then begin
       //Standard time (Local time)
-      RuleFixedOffset:=0;
-      RuleIndex:=-1;
+      NewZone.RuleFixedOffset:=0;
+      NewZone.RuleIndex:=-1;
     end else if RuleName[1] in ['0'..'9'] then begin
       //Fixed offset time to get standard time (Local time)
-      RuleFixedOffset:=TimeToSeconds(RuleName);
-      RuleIndex:=-1;
+      NewZone.RuleFixedOffset:=TimeToSeconds(RuleName);
+      NewZone.RuleIndex:=-1;
     end else begin
       RuleTmpIndex:=LookupRuleNonIndexed(RuleName);
       if RuleTmpIndex<0 then begin
-        SetLength(FZones,Index); //Remove put information
+        FZones.Delete(Index); //Remove put information
         Raise TTZException.CreateFmt('Rule on Zone line "%s" not found.',[AIterator.CurrentLine]);
       end else begin
-        RuleIndex:=RuleTmpIndex;
-        RuleFixedOffset:=0; //Nonsense value.
+        NewZone.RuleIndex:=RuleTmpIndex;
+        NewZone.RuleFixedOffset:=0; //Nonsense value.
       end;
     end;
 
     //Now its time for the format (GMT, BST, ...)
     TmpWord:=AIterator.GetNextWord;
     if Length(TmpWord)>TZ_TIMEZONELETTERS_SIZE Then begin
-      SetLength(FZones,Index); //Remove put information
+      FZones.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Format on Zone line "%s" too long. (Increase source code TZ_TIMEZONELETTERS_SIZE)',[AIterator.CurrentLine]);
     end;
-    TimeZoneLetters:=TmpWord;
+    NewZone.TimeZoneLetters:=TmpWord;
 
     //And finally the UNTIL field which format is optional fields from
     //left to right: year month day hour[s]
     //defaults:      YEAR Jan   1   0:00:00
-    RuleValidUntil:=ParseUntilFields(AIterator,RuleValidUntilGMT);
+    NewZone.RuleValidUntil:=ParseUntilFields(AIterator,NewZone.RuleValidUntilGMT);
   end;
 end;
 
@@ -351,28 +350,30 @@ var
   Index: integer;
   TmpWord: AsciiString;
   StandardTimeFlag: char;
+  NewRule: TTZRule;
 begin
-  Index:=Length(FRules);
-  SetLength(FRules,Index+1);
-  with FRules[Index] do begin
+  NewRule := TTZRule.Create;
+  Index := FRules.Add(NewRule); // list owns the new item
+
+  begin
     TmpWord:=AIterator.GetNextWord;
     if Length(TmpWord)>TZ_RULENAME_SIZE then begin
-      SetLength(FRules,Index); //Remove put information
+      FRules.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Name on Rule line "%s" too long. (Increase source code TZ_RULENAME_SIZE)',[AIterator.CurrentLine]);
     end;
-    Name:=TmpWord;
+    NewRule.Name:=TmpWord;
     //Begin year...
     TmpWord:=AIterator.GetNextWord;
-    FromYear:=StrToInt(TmpWord);
+    NewRule.FromYear:=StrToInt(TmpWord);
     //End year...
     TmpWord:=AIterator.GetNextWord;
     if TmpWord='only' then begin
-      ToYear:=FromYear;
+      NewRule.ToYear:=NewRule.FromYear;
     end else if TmpWord='max' then begin
       //max year, so in this case 9999
-      ToYear:=9999;
+      NewRule.ToYear:=9999;
     end else begin
-      ToYear:=StrToInt(TmpWord);
+      NewRule.ToYear:=StrToInt(TmpWord);
     end;
     //Year type (macro)
     TmpWord:=AIterator.GetNextWord;
@@ -385,42 +386,43 @@ begin
     end;
     //In month...
     TmpWord:=AIterator.GetNextWord;
-    InMonth:=MonthNumberFromShortName(TmpWord);
+    NewRule.InMonth:=MonthNumberFromShortName(TmpWord);
     //On Rule...
     TmpWord:=AIterator.GetNextWord;
-    if sizeOf(Onrule)<Length(TmpWord) then begin
+    if sizeOf(NewRule.OnRule)<Length(TmpWord) then begin
       Raise TTZException.CreateFmt('ON Rule condition at "%s" too long. (Increase source code TZ_ONRULE_SIZE)',[AIterator.CurrentLine]);
     end;
-    OnRule:=TmpWord;
+    NewRule.OnRule:=TmpWord;
     //AT field
     TmpWord:=AIterator.GetNextWord;
     StandardTimeFlag:=TmpWord[Length(TmpWord)];
     if StandardTimeFlag in ['s','u','g'] Then begin
       if StandardTimeFlag='s' then begin
-        AtHourGMT:=false;
+        NewRule.AtHourGMT:=false;
       end else begin
-        AtHourGMT:=true;
+        NewRule.AtHourGMT:=true;
       end;
       TmpWord:=Copy(TmpWord,1,Length(TmpWord)-1); //remove the standard time flag
     end;
-    AtHourTime:=TimeToSeconds(TmpWord);
+    NewRule.AtHourTime:=TimeToSeconds(TmpWord);
     //SAVE field
     TmpWord:=AIterator.GetNextWord;
-    SaveTime:=TimeToSeconds(TmpWord);
+    NewRule.SaveTime:=TimeToSeconds(TmpWord);
     //LETTERS field
-    TimeZoneLetters:=AIterator.GetNextWord;
-    if TimeZoneLetters='-' Then TimeZoneLetters:='';
+    NewRule.TimeZoneLetters:=AIterator.GetNextWord;
+    if NewRule.TimeZoneLetters='-' Then
+      NewRule.TimeZoneLetters:='';
   end;
 end;
 
 function TPascalTZ.GetCountZones: Integer;
 begin
-  Result := Length(FZones);
+  Result := FZones.Count;
 end;
 
 function TPascalTZ.GetCountRules: Integer;
 begin
-  Result := Length(FRules);
+  Result := FRules.Count;
 end;
 
 procedure TPascalTZ.GetTimeZoneNames(const AZones: TStringList;
@@ -431,7 +433,7 @@ var
 begin
   AZones.Clear;
   LT:='';
-  for j := 0 to High(FZones) do begin
+  for j := 0 to FZones.Count-1 do begin
     if FZones[j].Name<>LT Then begin
       LT:=FZones[j].Name;
       if AOnlyGeoZones then begin
@@ -503,7 +505,7 @@ begin
   j:=RuleIndex;
   SaveTime:=0;
   UsedRuleIndex:=-1;
-  while (j<=High(FRules)) and (FRules[j].Name=ApplyRuleName) do begin
+  while (j<=FRules.Count-1) and (FRules[j].Name=ApplyRuleName) do begin
     if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then begin
       //The year is in the rule range, so discard year information...
       RuleBeginDate.Year:=ADateTime.Year;
@@ -740,6 +742,14 @@ constructor TPascalTZ.Create;
 begin
   FDetectInvalidLocalTimes := True;
   FDatabaseLoaded := False;
+  FZones := TTZZoneList.Create(True); // FreeObjects = True
+  FRules := TTZRuleList.Create(True); // FreeObjects = True
+end;
+
+destructor TPascalTZ.Destroy;
+begin
+  FreeAndNil(FZones);
+  FreeAndNil(FRules);
 end;
 
 end.
