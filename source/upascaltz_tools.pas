@@ -20,8 +20,8 @@ procedure IsGregorianLeapException(const ADate: TTZDateTime);
 function IsBeforeGregorianLeap(const ADate: TTZDateTime): Boolean;
 function ParseUntilFields(const AIterator: TTZLineIterate; out AGMTTime: Boolean): TTZDateTime;
 procedure MacroSolver(var ADate: TTZDateTime; const ADayString: AsciiString);
-function MacroFirstWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay; const ASinceMonthDay: TTZDay=1): TTZDay;
-function MacroLastWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay; const ASinceMonthDay: TTZDay=31): TTZDay;
+function MacroFirstWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay): TTZDay;
+function MacroLastWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay): TTZDay;
 function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
 function IsLeapYear(const AYear: integer): Boolean;
 function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
@@ -307,8 +307,6 @@ var
   ConditionalEnd: integer;
   ConditionA,ConditionOp,ConditionB: AsciiString;
   WeekDay: TTZWeekDay;
-  LastWeekDay: TTZDay;
-  FirstWeekDay: TTZDay;
 begin
   //First check regular number...
   j:=StrToIntDef(ADayString,-1);
@@ -348,30 +346,29 @@ begin
     j:=StrToInt(ConditionB);
     if ConditionOp='>' then begin
       ADate.Day:=j+1;
-      FirstWeekDay:=MacroFirstWeekDay(ADate,WeekDay);
+      ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
     end else if ConditionOp='>=' then begin
       ADate.Day:=j;
-      FirstWeekDay:=MacroFirstWeekDay(ADate,WeekDay);
+      ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
     end else if ConditionOp='<' then begin
       ADate.Day:=j-1;
-      FirstWeekDay:=MacroLastWeekDay(ADate,WeekDay);
+      ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
     end else if ConditionOp='<=' then begin
       ADate.Day:=j;
-      FirstWeekDay:=MacroLastWeekDay(ADate,WeekDay);
+      ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
     end else begin
       Raise TTZException.Create('Macro expansion not possible: Unknown condition operator');
     end;
-    ADate.Day:=FirstWeekDay;
   end else begin
     //It is not a conditional macro, so it could be firstXXX or lastXXX
     if LeftStr(ADayString,5)='first' then begin
       WeekDay:=DayNameToNumber(Copy(ADayString,6,Length(ADayString)-5));
-      FirstWeekDay:=MacroFirstWeekDay(ADate,WeekDay);
-      ADate.Day:=FirstWeekDay;
+      ADate.Day:=Low(TTZDay);
+      ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
     end else if LeftStr(ADayString,4)='last' then begin
       WeekDay:=DayNameToNumber(Copy(ADayString,5,Length(ADayString)-4));
-      LastWeekDay:=MacroLastWeekDay(ADate,WeekDay);
-      ADate.Day:=LastWeekDay;
+      ADate.Day:=High(TTZDay);
+      ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
     end else begin
       Raise TTZException.Create('Macro expansion not possible: Unrecognised macro');
     end;
@@ -451,16 +448,13 @@ begin
 end;
 
 function MacroFirstWeekDay(const ADate: TTZDateTime;
-  const AWeekDay: TTZWeekDay; const ASinceMonthDay: TTZDay): TTZDay;
+  const AWeekDay: TTZWeekDay): TTZDay;
 var
-  TmpDate: TTZDateTime;
   FirstWDInMonth: TTZWeekDay;
   TheDay: Integer;
 begin
-  TmpDate:=ADate;
-  TmpDate.Day:=ASinceMonthDay;
-  FirstWDInMonth:=WeekDayOf(TmpDate);
-  TheDay:=1;
+  FirstWDInMonth:=WeekDayOf(ADate);
+  TheDay:=ADate.Day;
   if FirstWDInMonth<AWeekDay Then begin
     inc(TheDay,(integer(AWeekDay)-integer(FirstWDInMonth)));
   end else if FirstWDInMonth>AWeekDay then begin
@@ -472,30 +466,26 @@ begin
     if TheDay>TTZMonthDaysCount[ADate.Month] Then TheDay:=0; //Invalidate day
   end;
   if TheDay<1 then begin
-    Raise TTZException.CreateFmt('No valid week day for "%s" after %.4d.%.2d.%.2d',[WeekDayToString(AWeekDay),TmpDate.Year,TmpDate.Month,TmpDate.Day]);
+    Raise TTZException.CreateFmt('No valid first week day for "%s" after %.4d.%.2d.%.2d',
+      [WeekDayToString(AWeekDay), ADate.Year, ADate.Month, ADate.Day]);
   end;
   Result:=TheDay;
 end;
 
 function MacroLastWeekDay(const ADate: TTZDateTime;
-  const AWeekDay: TTZWeekDay; const ASinceMonthDay: TTZDay): TTZDay;
+  const AWeekDay: TTZWeekDay): TTZDay;
 var
   TmpDate: TTZDateTime;
   LastWDInMonth: TTZWeekDay;
   TheDay: Integer;
 begin
   TmpDate:=ADate;
-  if not IsLeapYear(ADate.Year) Then begin
-    if ASinceMonthDay>TTZMonthDaysCount[TmpDate.Month] then begin
+  if not IsLeapYear(TmpDate.Year) Then begin
+    if TmpDate.Day>TTZMonthDaysCount[TmpDate.Month] then
       TmpDate.Day:=TTZMonthDaysCount[TmpDate.Month];
-    end else begin
-      TmpDate.Day:=ASinceMonthDay;
-    end;
   end else begin
-    if ASinceMonthDay>TTZMonthDaysLeapYearCount[TmpDate.Month] then begin
+    if TmpDate.Day>TTZMonthDaysLeapYearCount[TmpDate.Month] then begin
       TmpDate.Day:=TTZMonthDaysLeapYearCount[TmpDate.Month];
-    end else begin
-      TmpDate.Day:=ASinceMonthDay;
     end;
   end;
   LastWDInMonth:=WeekDayOf(TmpDate);
@@ -506,7 +496,8 @@ begin
     Dec(TheDay,(integer(LastWDInMonth)-integer(AWeekDay)));
   end;
   if TheDay<1 then begin
-    Raise TTZException.CreateFmt('No valid week day for "%s" before %.4d.%.2d.%.2d',[WeekDayToString(AWeekDay),TmpDate.Year,TmpDate.Month,TmpDate.Day]);
+    Raise TTZException.CreateFmt('No valid last week day for "%s" before %.4d.%.2d.%.2d',
+      [WeekDayToString(AWeekDay), ADate.Year, ADate.Month, ADate.Day]);
   end;
   Result:=TheDay;
 end;
