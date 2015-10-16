@@ -13,6 +13,8 @@ It is designed to:
 
 This code is based on PascalTZ Version 1.0 2009.11.10 originally created by José Mejuto.
 
+Please see [USAGE.md](USAGE.md) for general usage instructions and known issues.
+
 ### Authors
 
 - 2009 - José Mejuto
@@ -22,19 +24,6 @@ This code is based on PascalTZ Version 1.0 2009.11.10 originally created by Jos�
 
 [Modified](COPYING.modifiedLGPL.txt)
 [LGPL](COPYING.LGPL.txt) (same as the [FPC RTL](http://wiki.freepascal.org/FPC_modified_LGPL) and the Lazarus LCL).
-
-### Dependencies / Requirements
-
-- [Time Zone Database](https://www.iana.org/time-zones) - use the latest `tzdata*.tar.gz`.
-
-### Installation
-
-1. Just add the `upascaltz` to the uses clause of your project.
-2. Load a database in a new instance of the class.
-
-### Known Issues
-
-`TDateTime` in FPC seems to have problems for dates before *30 Dec 1899*, so the time operations before such date could be wrong. If you need to operate with early dates you can derive a new class from `TPascalTZ` and expose the `TTZDateTime` to operate with.
 
 ### See Also
 

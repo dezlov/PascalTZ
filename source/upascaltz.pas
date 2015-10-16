@@ -5,50 +5,7 @@ unit uPascalTZ;
 {
   File: upascaltz.pas
 
-  This unit is designed to convert local times across different time zones
-  at any given time in the past and probably in the future, this can not be
-  ensured as time change rules could change in the future. For this purpose
-  it uses the time rules database available at
-  http://www.twinsun.com/tz/tz-link.htm
-
   License: The same as freepascal packages (basically LGPL)
-
-  The database is presented in different files so you can use one of them
-  using "ParseDatabaseFromFile" or concatenate the interested ones in a single
-  file or stream. Once the database is loaded calling "ParseDatabaseFromXXXX"
-  deletes the in memory parsed data.
-
-  ProcessedLines
-    Amount of read lines in database.
-
-  DetectInvalidLocalTimes [True|False] (default true)
-    When converting it will check if the given time is impossible (does not
-    exists). This happends, in example, when a local time changes from 2:00
-    to 3:00, if the time to be converted is 2:01 at the change date, that
-    time does not exists as it is not linear.
-
-  GetTimeZoneNames(const AZones: TStringList; const AOnlyGeoZones: Boolean=true);
-    Returns a TStringList with the time zones available in the database. This
-    names must be used for local times to perform conversions. It is not a
-    country list, as many countries have several time zones. AOnlyGeoZones
-    removes from the list the usual "GMT, BST, PST" from the list.
-
-  GMTToLocalTime
-    Converts a GMT/UTC/Zulu time to a time zone (AToZone). ATimeZoneSubFix
-    returns the subfix for that zone like "GMT, BST, ...".
-
-  LocalTimeToGMT
-    Converts a local time at time zone "AFromZone" to GMT/UTC/Zulu time.
-
-  TimeZoneToTimeZone
-    Converts time across zones. Basically this performs a local time to
-    GMT and GTM to the new local time.
-
-  ParseDatabaseFromFile(const AFileName: String): Boolean;
-    Reads the database from a file.
-
-  ParseDatabaseFromStream(const AStream: TStream): Boolean;
-    Reads the database from a stream.
 
   2009 - José Mejuto
 }
