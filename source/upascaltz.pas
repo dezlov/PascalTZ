@@ -56,7 +56,7 @@ unit uPascalTZ;
 interface
 
 uses
-  Classes,SysUtils,uPascalTZ_Types,uPascalTZ_Sorters;
+  Classes,SysUtils,uPascalTZ_Types;
 
 type
   { TPascalTZ }
@@ -68,9 +68,7 @@ type
     ParseStatusPreviousZone: AsciiString;
     function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
     function FindZoneName(const AZone: String): integer;
-    function fSortCompareRule(const AIndex,BIndex: SizeInt): TSortCompareResult;
-    procedure fSortSwapRule(const AIndex,BIndex: SizeInt);
-    procedure SortRules();
+    procedure SortRules;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
     procedure CheckCanLoadDatabase;
@@ -157,27 +155,30 @@ begin
   Result:=j;
 end;
 
-function TPascalTZ.fSortCompareRule(const AIndex, BIndex: SizeInt
-  ): TSortCompareResult;
+function SortCompareRule(const Item1, Item2: TTZRule): Integer;
+const
+  eSortCompareBigger = 1;
+  eSortCompareLesser = -1;
+  eSortCompareEqual  = 0;
 begin
-  if FRules[AIndex].Name>FRules[BIndex].Name Then begin
+  if Item1.Name>Item2.Name Then begin
     Exit(eSortCompareBigger);
-  end else if FRules[AIndex].Name<FRules[BIndex].Name Then begin
+  end else if Item1.Name<Item2.Name Then begin
     Exit(eSortCompareLesser);
   end;
-  if FRules[AIndex].FromYear>FRules[BIndex].FromYear then begin
+  if Item1.FromYear>Item2.FromYear then begin
     Exit(eSortCompareBigger);
-  end else if FRules[AIndex].FromYear<FRules[BIndex].FromYear Then begin
+  end else if Item1.FromYear<Item2.FromYear Then begin
     Exit(eSortCompareLesser);
   end;
-  if FRules[AIndex].ToYear>FRules[BIndex].ToYear then begin
+  if Item1.ToYear>Item2.ToYear then begin
     Exit(eSortCompareBigger);
-  end else if FRules[AIndex].ToYear<FRules[BIndex].ToYear Then begin
+  end else if Item1.ToYear<Item2.ToYear Then begin
     Exit(eSortCompareLesser);
   end;
-  if FRules[AIndex].InMonth>FRules[BIndex].InMonth then begin
+  if Item1.InMonth>Item2.InMonth then begin
     Exit(eSortCompareBigger);
-  end else if FRules[AIndex].InMonth<FRules[BIndex].InMonth Then begin
+  end else if Item1.InMonth<Item2.InMonth Then begin
     Exit(eSortCompareLesser);
   end;
   //This should not happend
@@ -185,21 +186,10 @@ begin
   Result:=eSortCompareEqual;
 end;
 
-procedure TPascalTZ.fSortSwapRule(const AIndex, BIndex: SizeInt);
+// TODO: Investigate whether SortRules is actually needed for correct operation.
+procedure TPascalTZ.SortRules;
 begin
-  FRules.Exchange(AIndex, BIndex);
-end;
-
-procedure TPascalTZ.SortRules();
-var
-  Sorter: THeapSort;
-begin
-  //Sort the rules by name
-  Sorter:=THeapSort.Create(FRules.Count);
-  Sorter.OnCompareOfClass:=@fSortCompareRule;
-  Sorter.OnSwapOfClass:=@fSortSwapRule;
-  Sorter.Sort();
-  Sorter.Free;
+  FRules.Sort(@SortCompareRule);
 end;
 
 function TPascalTZ.LookupRuleNonIndexed(const AName: AsciiString): Integer;
