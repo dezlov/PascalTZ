@@ -61,7 +61,7 @@ type
     property ProcessedLines: integer read FLineCounter;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStringList; const AOnlyGeoZones: Boolean=true);
-    function TimeZoneExists(const AZone: String): Boolean;
+    function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime; overload;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
     function LocalTimeToGMT(const ADateTime: TDateTime; const AFromZone: String): TDateTime;
@@ -451,16 +451,9 @@ begin
   end;
 end;
 
-function TPascalTZ.TimeZoneExists(const AZone: String): Boolean;
-var
-  j: Integer;
+function TPascalTZ.TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
 begin
-  Result := False;
-  for j := 0 to FZones.Count-1 do
-  begin
-    if FZones[j].Name = AZone then
-      Exit(True);
-  end;
+  Result := (FindZoneName(AZone, AIncludeLinks) >= 0);
 end;
 
 function TPascalTZ.Convert(const ADateTime: TTZDateTime;
