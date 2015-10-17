@@ -399,14 +399,13 @@ end;
 
 function TPascalTZ.TimeZoneExists(const AZone: String): Boolean;
 var
-  AZoneList: TStringList;
+  j: Integer;
 begin
-  AZoneList := TStringList.Create;
-  try
-    GetTimeZoneNames(AZoneList, False);
-    Result := (AZoneList.IndexOf(AZone) >= 0);
-  finally
-    AZoneList.Free;
+  Result := False;
+  for j := 0 to FZones.Count-1 do
+  begin
+    if FZones[j].Name = AZone then
+      Exit(True);
   end;
 end;
 
