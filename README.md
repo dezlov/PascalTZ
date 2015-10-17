@@ -22,6 +22,8 @@ The maintenance of this package has been taken up by *Denis Kozlov* in 2015 with
 
 Please see [USAGE.md](USAGE.md) for general usage instructions and known issues.
 
+Please see [CHANGES.md](CHANGES.md) for a list of major changes between versions.
+
 ### Authors
 
 - 2009 - José Mejuto
