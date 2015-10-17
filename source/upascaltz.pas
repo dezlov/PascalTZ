@@ -56,6 +56,8 @@ type
       const AConvertToZone: Boolean): TTZDateTime; overload;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
       const AConvertToZone: Boolean; out ATimeZoneName: String): TTZDateTime; overload;
+    function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
+      const IsDST: Boolean): AsciiString;
   public
     property CountZones: Integer read GetCountZones;
     property CountRules: Integer read GetCountRules;
@@ -519,6 +521,30 @@ begin
   Result := (FindZoneName(AZone, AIncludeLinks) >= 0);
 end;
 
+function TPascalTZ.ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
+  const IsDST: Boolean): AsciiString;
+var
+  ZoneNameCut: integer;
+begin
+  Result := AZoneLetters;
+
+  // Placeholders "%s" in time zone abbreviations seem to be documented as lower case,
+  // but use rfIgnoreCase flag in StringReplace just to be safe.
+  Result := StringReplace(Result, '%s', ARuleLetters, [rfReplaceAll, rfIgnoreCase]);
+
+  // When timezonename is XXX/YYY, XXX is no daylight and YYY is daylight saving.
+  ZoneNameCut:=Pos('/',Result);
+  if ZoneNameCut>0 then
+  begin
+    if not IsDST then
+      // Use the XXX
+      Result:=Copy(Result,1,ZoneNameCut-1)
+    else
+      // Use the YYY
+      Result:=Copy(Result,ZoneNameCut+1,Length(Result)-ZoneNameCut);
+  end;
+end;
+
 function TPascalTZ.Convert(const ADateTime: TTZDateTime;
   const AZone: String; const AConvertToZone: Boolean): TTZDateTime;
 var
@@ -534,7 +560,6 @@ var
   ZoneIndex, RuleIndex: Integer;
   SaveTime: integer;
   RuleLetters: AsciiString;
-  ZoneNameCut: integer;
 begin
   //Find zone matching target...
   ZoneIndex:=FindZoneName(AZone, True);
@@ -588,20 +613,7 @@ begin
   end;
 
   ATimeZoneName := FZones[ZoneIndex].TimeZoneLetters;
-  // Placeholders "%s" in time zone abbreviations seem to be documented as lower case,
-  // but use rfIgnoreCase flag in StringReplace just to be safe.
-  ATimeZoneName := StringReplace(ATimeZoneName, '%s', RuleLetters, [rfReplaceAll, rfIgnoreCase]);
-  //When timezonename is XXX/YYY XXX is no daylight and YYY is daylight saving.
-  ZoneNameCut:=Pos('/',ATimeZoneName);
-  if ZoneNameCut>0 then begin
-    if SaveTime=0 then begin
-      //Use the XXX
-      ATimeZoneName:=Copy(ATimeZoneName,1,ZoneNameCut-1);
-    end else begin
-      //Use the YYY
-      ATimeZoneName:=Copy(ATimeZoneName,ZoneNameCut+1,Length(ATimeZoneName)-ZoneNameCut);
-    end;
-  end;
+  ATimeZoneName := ResolveTimeZoneAbbreviation(ATimeZoneName, RuleLetters, SaveTime <> 0);
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime;
