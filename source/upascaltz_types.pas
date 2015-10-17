@@ -86,6 +86,14 @@ end;
 
 TTZZoneList = specialize TFPGObjectList<TTZZone>;
 
+TTZLink=class
+public
+  LinkFrom: AsciiString; // existing zone name
+  LinkTo: AsciiString; // alternative zone name
+end;
+
+TTZLinkList = specialize TFPGObjectList<TTZLink>;
+
 { TTZLineIterate }
 
 TTZLineIterate = class(TObject)

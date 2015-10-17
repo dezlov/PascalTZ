@@ -29,7 +29,8 @@ type
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
     function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
-    function FindZoneName(const AZone: String): integer;
+    function FindZoneName(const AZone: AsciiString; const AIncludeLinks: Boolean): integer;
+    function FindLinkName(const AZoneLinkTo: AsciiString): integer;
     function FindRuleName(const AName: AsciiString): Integer;
     procedure SortRules;
     function GetCountZones: Integer;
@@ -40,10 +41,12 @@ type
     FLineCounter: integer;
     FRules: TTZRuleList;
     FZones: TTZZoneList;
+    FLinks: TTZLinkList;
     procedure ParseLine(const ALineNumber: Integer; const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseLine(const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
     procedure BareParseRule(const AIterator: TTZLineIterate);
+    procedure BareParseLink(const AIterator: TTZLineIterate);
     function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
     function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String;out ATimeZoneName: String): TTZDateTime;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
@@ -89,19 +92,39 @@ begin
   end;
 end;
 
-function TPascalTZ.FindZoneName(const AZone: String): integer;
+function TPascalTZ.FindLinkName(const AZoneLinkTo: AsciiString): integer;
 var
-  ZoneIndex: integer;
   j: integer;
 begin
-  ZoneIndex:=-1;
-  for j := 0 to FZones.Count-1 do begin
-    if FZones[j].Name=AZone then begin
-      ZoneIndex:=j;
+  Result:=-1;
+  for j := 0 to FLinks.Count-1 do begin
+    if FLinks[j].LinkTo=AZoneLinkTo then begin
+      Result:=j;
       Break;
     end;
   end;
-  Result:=ZoneIndex;
+end;
+
+function TPascalTZ.FindZoneName(const AZone: AsciiString; const AIncludeLinks: Boolean): integer;
+var
+  LinkIndex: Integer;
+  TargetZone: AsciiString;
+  j: integer;
+begin
+  Result:=-1;
+  TargetZone := AZone;
+  if AIncludeLinks then
+  begin
+    LinkIndex := FindLinkName(AZone);
+    if LinkIndex >= 0 then
+      TargetZone := FLinks[LinkIndex].LinkFrom;
+  end;
+  for j := 0 to FZones.Count-1 do begin
+    if FZones[j].Name=TargetZone then begin
+      Result:=j;
+      Break;
+    end;
+  end;
 end;
 
 function TPascalTZ.FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
@@ -213,7 +236,9 @@ begin
           BareParseRule(Parser);
         end;
       end else if ParseStatusTAG='Link' then begin
-
+        if (AParseSequence=TTzParseLink) then begin
+          BareParseLink(Parser);
+        end;
       end else begin
         raise TTZException.CreateFmt('Unknown line tag "%s"', [ParseStatusTAG]);
       end;
@@ -357,6 +382,36 @@ begin
   end;
 end;
 
+procedure TPascalTZ.BareParseLink(const AIterator: TTZLineIterate);
+var
+  NewLink: TTZLink;
+  Index: Integer;
+  TmpWord: AsciiString;
+begin
+  NewLink := TTZLink.Create;
+  Index := FLinks.Add(NewLink); // list owns the new item
+  try
+    // "FROM" zone
+    TmpWord := AIterator.GetNextWord;
+    if Length(TmpWord) > TZ_ZONENAME_SIZE then
+      raise TTZException.CreateFmt('Zone link FROM name "%s" is too long. (Increase source code TZ_ZONENAME_SIZE)', [TmpWord]);
+    NewLink.LinkFrom := TmpWord;
+
+    // "TO" zone
+    TmpWord := AIterator.GetNextWord;
+    if Length(TmpWord) > TZ_ZONENAME_SIZE then
+      raise TTZException.CreateFmt('Zone link TO name "%s" is too long. (Increase source code TZ_ZONENAME_SIZE)', [TmpWord]);
+    NewLink.LinkTo := TmpWord;
+
+    // Check existance of "FROM" zone
+    if FindZoneName(NewLink.LinkFrom, False) < 0 then
+      raise TTZException.CreateFmt('Zone info not found for link FROM "%s" TO "%s".', [NewLink.LinkFrom, NewLink.LinkTo]);
+  except
+    FLinks.Delete(Index);
+    raise;
+  end;
+end;
+
 function TPascalTZ.GetCountZones: Integer;
 begin
   Result := FZones.Count;
@@ -414,8 +469,7 @@ function TPascalTZ.Convert(const ADateTime: TTZDateTime;
   out ATimeZoneName: String): TTZDateTime;
 var
   j: integer;
-  ZoneIndex: integer;
-  RuleIndex: integer;
+  ZoneIndex, RuleIndex: Integer;
   ApplyRuleName: AsciiString;
   RuleBeginDate,RuleEndDate,UsedRuleBeginDate: TTZDateTime;
   SaveTime: integer;
@@ -424,10 +478,11 @@ var
   UsedRuleIndex: Integer;
 begin
   //Find zone matching target...
-  ZoneIndex:=FindZoneName(AZone);
+  ZoneIndex:=FindZoneName(AZone, True);
   if ZoneIndex<0 then begin
     raise TTZException.CreateFmt('Zone not found [%s]', [AZone]);
   end;
+
   // Now check which zone configuration line matches the given date.
   ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
   if ZoneIndex<0 then begin
@@ -691,12 +746,14 @@ constructor TPascalTZ.Create;
 begin
   FDetectInvalidLocalTimes := True;
   FDatabaseLoaded := False;
+  FLinks := TTZLinkList.Create(True); // FreeObjects = True
   FZones := TTZZoneList.Create(True); // FreeObjects = True
   FRules := TTZRuleList.Create(True); // FreeObjects = True
 end;
 
 destructor TPascalTZ.Destroy;
 begin
+  FreeAndNil(FLinks);
   FreeAndNil(FZones);
   FreeAndNil(FRules);
 end;
