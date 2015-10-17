@@ -587,7 +587,10 @@ begin
     end;
   end;
 
-  ATimeZoneName:=format(FZones[ZoneIndex].TimeZoneLetters,[RuleLetters]);
+  ATimeZoneName := FZones[ZoneIndex].TimeZoneLetters;
+  // Placeholders "%s" in time zone abbreviations seem to be documented as lower case,
+  // but use rfIgnoreCase flag in StringReplace just to be safe.
+  ATimeZoneName := StringReplace(ATimeZoneName, '%s', RuleLetters, [rfReplaceAll, rfIgnoreCase]);
   //When timezonename is XXX/YYY XXX is no daylight and YYY is daylight saving.
   ZoneNameCut:=Pos('/',ATimeZoneName);
   if ZoneNameCut>0 then begin
