@@ -28,6 +28,8 @@ type
     FDatabaseLoaded: Boolean;
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
+    function FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
+      const ADateTime: TTZDateTime; const AConvertToZone: Boolean): Integer;
     function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
     function FindZoneName(const AZone: AsciiString; const AIncludeLinks: Boolean): integer;
     function FindLinkName(const AZoneLinkTo: AsciiString): integer;
@@ -141,6 +143,54 @@ begin
     if CompareDates(FZones[j].RuleValidUntil, ADateTime)=1 then begin
       Result:=j;
       break;
+    end;
+    inc(j);
+  end;
+end;
+
+function TPascalTZ.FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
+  const ADateTime: TTZDateTime; const AConvertToZone: Boolean): Integer;
+var
+  j: Integer;
+  RuleName: AsciiString;
+  RuleBeginDate, RuleEndDate, UsedRuleBeginDate: TTZDateTime;
+begin
+  Result:=-1;
+  j := RuleIndexStart;
+  RuleName := FRules[j].Name;
+  while (j<=FRules.Count-1) and (FRules[j].Name=RuleName) do
+  begin
+    if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then
+    begin
+      //The year is in the rule range, so discard year information...
+      RuleBeginDate.Year:=ADateTime.Year;
+      RuleBeginDate.Month:=FRules[j].InMonth;
+      MacroSolver(RuleBeginDate,FRules[j].OnRule);
+      RuleBeginDate.SecsInDay:=FRules[j].AtHourTime;
+      if not AConvertToZone then
+        Inc(RuleBeginDate.SecsInDay, FZones[ZoneIndex].Offset);
+
+      RuleEndDate.Year:=ADateTime.Year;
+      RuleEndDate.Month:=12;
+      RuleEndDate.Day:=31;
+      RuleEndDate.SecsInDay:=SecsPerDay;
+
+      // Ensure that we use the latest applicable rule, once it has passed the initial range.
+      // When rules are sorted by year and then by month, it doesn't guarantee that
+      // all applicable rules for the year in question are also in ascending order by month.
+      // For example: Rule1 = 2000-2010 Oct; Rule2 = 2005-2010 Mar; for years 2005-2010
+      // both rules are applicable but they are not in ascending order by month (Oct, Mar),
+      // so simply using the last rule in the list will not work!
+      if (CompareDates(ADateTime,RuleBeginDate)>=0) and
+         (CompareDates(ADateTime,RuleEndDate)<=0) then
+      begin
+        // "UsedRuleBeginDate" not initialized is ok by design!
+        if (Result < 0) or (CompareDates(RuleBeginDate, UsedRuleBeginDate)>=0) then
+        begin
+          Result := j;
+          UsedRuleBeginDate := RuleBeginDate;
+        end;
+      end;
     end;
     inc(j);
   end;
@@ -481,14 +531,10 @@ function TPascalTZ.Convert(const ADateTime: TTZDateTime;
   const AZone: String; const AConvertToZone: Boolean;
   out ATimeZoneName: String): TTZDateTime;
 var
-  j: integer;
   ZoneIndex, RuleIndex: Integer;
-  ApplyRuleName: AsciiString;
-  RuleBeginDate,RuleEndDate,UsedRuleBeginDate: TTZDateTime;
   SaveTime: integer;
   RuleLetters: AsciiString;
   ZoneNameCut: integer;
-  UsedRuleIndex: Integer;
 begin
   //Find zone matching target...
   ZoneIndex:=FindZoneName(AZone, True);
@@ -518,45 +564,13 @@ begin
   end;
 
   //Now we have the valid rule index...
-  ApplyRuleName:=FRules[RuleIndex].Name;
-  j:=RuleIndex;
-  SaveTime:=0;
-  UsedRuleIndex:=-1;
-  while (j<=FRules.Count-1) and (FRules[j].Name=ApplyRuleName) do begin
-    if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then begin
-      //The year is in the rule range, so discard year information...
-      RuleBeginDate.Year:=ADateTime.Year;
-      RuleBeginDate.Month:=FRules[j].InMonth;
-      MacroSolver(RuleBeginDate,FRules[j].OnRule);
-      RuleBeginDate.SecsInDay:=FRules[j].AtHourTime;
-      if not AConvertToZone then
-        Inc(RuleBeginDate.SecsInDay, FZones[ZoneIndex].Offset);
-
-      RuleEndDate.Year:=ADateTime.Year;
-      RuleEndDate.Month:=12;
-      RuleEndDate.Day:=31;
-      RuleEndDate.SecsInDay:=SecsPerDay;
-
-      // Ensure that we use the latest applicable rule, once it has passed the initial range.
-      // When rules are sorted by year and then by month, it doesn't guarantee that
-      // all applicable rules for the year in question are also in ascending order by month.
-      // For example: Rule1 = 2000-2010 Oct; Rule2 = 2005-2010 Mar; for years 2005-2010
-      // both rules are applicable but they are not in ascending order by month (Oct, Mar),
-      // so simply using the last rule in the list will not work!
-      if (CompareDates(ADateTime,RuleBeginDate)>=0) and
-         (CompareDates(ADateTime,RuleEndDate)<=0) then
-      begin
-        // "UsedRuleBeginDate" not initialized is ok by design!
-        if (UsedRuleIndex < 0) or (CompareDates(RuleBeginDate, UsedRuleBeginDate)>=0) then
-        begin
-          SaveTime:=FRules[j].SaveTime;
-          RuleLetters:=FRules[j].TimeZoneLetters;
-          UsedRuleIndex := j;
-          UsedRuleBeginDate := RuleBeginDate;
-        end;
-      end;
-    end;
-    inc(j);
+  SaveTime := 0;
+  RuleLetters := '';
+  RuleIndex := FindRuleForDate(RuleIndex, ZoneIndex, ADateTime, AConvertToZone);
+  if RuleIndex >= 0 then
+  begin
+    SaveTime := FRules[RuleIndex].SaveTime;
+    RuleLetters := FRules[RuleIndex].TimeZoneLetters;
   end;
 
   Result:=ADateTime;
