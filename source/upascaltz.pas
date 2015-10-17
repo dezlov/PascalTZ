@@ -264,18 +264,18 @@ begin
     if RuleName='-' then begin
       //Standard time (Local time)
       NewZone.RuleFixedOffset:=0;
-      NewZone.RuleIndex:=-1;
+      NewZone.RuleName:='';
     end else if RuleName[1] in ['0'..'9'] then begin
       //Fixed offset time to get standard time (Local time)
       NewZone.RuleFixedOffset:=TimeToSeconds(RuleName);
-      NewZone.RuleIndex:=-1;
+      NewZone.RuleName:='';
     end else begin
       RuleTmpIndex:=LookupRuleNonIndexed(RuleName);
       if RuleTmpIndex<0 then begin
         FZones.Delete(Index); //Remove put information
         Raise TTZException.CreateFmt('Rule on Zone line "%s" not found.',[AIterator.CurrentLine]);
       end else begin
-        NewZone.RuleIndex:=RuleTmpIndex;
+        NewZone.RuleName:=RuleName;
         NewZone.RuleFixedOffset:=0; //Nonsense value.
       end;
     end;
@@ -435,9 +435,11 @@ begin
   ZoneIndex:=FindZoneName(AZone);
   // Now check which zone configuration line matches the given date.
   ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
-  RuleIndex:=FZones[ZoneIndex].RuleIndex;
+  RuleIndex:=-1;
+  if Length(FZones[ZoneIndex].RuleName) > 0 then
+    RuleIndex:=LookupRuleNonIndexed(FZones[ZoneIndex].RuleName);
 
-  if RuleIndex=-1 then begin
+  if RuleIndex<0 then begin
     //No rule is applied, so use the zone fixed offset
     Result:=ADateTime;
     if AConvertToZone then

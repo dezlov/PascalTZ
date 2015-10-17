@@ -77,7 +77,7 @@ TTzZone=class
 public
   Name: AsciiString;
   Offset: integer; //seconds
-  RuleIndex: integer; //Rule index in rules array.
+  RuleName: AsciiString;
   RuleFixedOffset: integer; //seconds
   TimeZoneLetters: AsciiString;
   RuleValidUntilGMT: Boolean;
