@@ -37,7 +37,6 @@ type
   protected
     FDetectInvalidLocalTimes: Boolean;
     FLineCounter: integer;
-    FCurrentLine: AsciiString;
     FRules: TTZRuleList;
     FZones: TTZZoneList;
     Function LookupRuleNonIndexed(const AName: AsciiString): Integer;
@@ -198,7 +197,6 @@ begin
   end;
   if spCount=Length(PreParseLine) Then PreParseLine:=''; //all spaces in line
   if Length(PreParseLine)>0 then begin
-    FCurrentLine:=ALine;
     Parser:=TTZLineIterate.Create(PreParseLine);
     try
       ZoneContinue:=false;
