@@ -101,32 +101,24 @@ begin
       Break;
     end;
   end;
-  if ZoneIndex<0 then begin
-    raise TTZException.CreateFmt('Zone not found [%s]', [AZone]);
-  end;
   Result:=ZoneIndex;
 end;
 
 function TPascalTZ.FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
 var
-  Found: Boolean;
   AZone: AsciiString;
   j: integer;
 begin
   AZone:=FZones[ZoneIndexStart].Name;
   j:=ZoneIndexStart;
-  Found:=false;
+  Result:=-1;
   while (j<=FZones.Count-1) and (FZones[j].Name=AZone) do begin
     if CompareDates(FZones[j].RuleValidUntil, ADateTime)=1 then begin
-      Found:=true;
+      Result:=j;
       break;
     end;
     inc(j);
   end;
-  if not Found then begin
-    raise TTZException.CreateFmt('No valid conversion rule for Zone [%s]', [AZone]);
-  end;
-  Result:=j;
 end;
 
 function SortCompareRule(const Item1, Item2: TTZRule): Integer;
@@ -433,8 +425,14 @@ var
 begin
   //Find zone matching target...
   ZoneIndex:=FindZoneName(AZone);
+  if ZoneIndex<0 then begin
+    raise TTZException.CreateFmt('Zone not found [%s]', [AZone]);
+  end;
   // Now check which zone configuration line matches the given date.
   ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
+  if ZoneIndex<0 then begin
+    raise TTZException.CreateFmt('No valid conversion rule for Zone [%s]', [AZone]);
+  end;
   RuleIndex:=-1;
   if Length(FZones[ZoneIndex].RuleName) > 0 then
     RuleIndex:=FindRuleName(FZones[ZoneIndex].RuleName);
