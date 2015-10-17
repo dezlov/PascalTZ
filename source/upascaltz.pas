@@ -30,6 +30,7 @@ type
     ParseStatusPreviousZone: AsciiString;
     function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
     function FindZoneName(const AZone: String): integer;
+    function FindRuleName(const AName: AsciiString): Integer;
     procedure SortRules;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
@@ -39,7 +40,6 @@ type
     FLineCounter: integer;
     FRules: TTZRuleList;
     FZones: TTZZoneList;
-    Function LookupRuleNonIndexed(const AName: AsciiString): Integer;
     procedure ParseLine(const ALineNumber: Integer; const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseLine(const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
@@ -75,6 +75,19 @@ uses
   RtlConsts, DateUtils, uPascalTZ_Tools;
 
 { TPascalTZ }
+
+function TPascalTZ.FindRuleName(const AName: AsciiString): Integer;
+var
+  j: integer;
+begin
+  Result:=-1;
+  for j := 0 to FRules.Count-1 do begin
+    if FRules[j].Name=AName then begin
+      Result:=j;
+      break;
+    end;
+  end;
+end;
 
 function TPascalTZ.FindZoneName(const AZone: String): integer;
 var
@@ -151,19 +164,6 @@ end;
 procedure TPascalTZ.SortRules;
 begin
   FRules.Sort(@SortCompareRule);
-end;
-
-function TPascalTZ.LookupRuleNonIndexed(const AName: AsciiString): Integer;
-var
-  j: integer;
-begin
-  Result:=-1;
-  for j := 0 to FRules.Count-1 do begin
-    if FRules[j].Name=AName then begin
-      Result:=j;
-      break;
-    end;
-  end;
 end;
 
 procedure TPascalTZ.ParseLine(const ALineNumber: Integer;
@@ -270,7 +270,7 @@ begin
       NewZone.RuleFixedOffset:=TimeToSeconds(RuleName);
       NewZone.RuleName:='';
     end else begin
-      RuleTmpIndex:=LookupRuleNonIndexed(RuleName);
+      RuleTmpIndex:=FindRuleName(RuleName);
       if RuleTmpIndex<0 then begin
         FZones.Delete(Index); //Remove put information
         Raise TTZException.CreateFmt('Rule on Zone line "%s" not found.',[AIterator.CurrentLine]);
@@ -437,7 +437,7 @@ begin
   ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
   RuleIndex:=-1;
   if Length(FZones[ZoneIndex].RuleName) > 0 then
-    RuleIndex:=LookupRuleNonIndexed(FZones[ZoneIndex].RuleName);
+    RuleIndex:=FindRuleName(FZones[ZoneIndex].RuleName);
 
   if RuleIndex<0 then begin
     //No rule is applied, so use the zone fixed offset
