@@ -35,6 +35,7 @@ type
     procedure SortRules;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
+    function GetCountLinks: Integer;
     procedure CheckCanLoadDatabase;
   protected
     FDetectInvalidLocalTimes: Boolean;
@@ -56,6 +57,7 @@ type
   public
     property CountZones: Integer read GetCountZones;
     property CountRules: Integer read GetCountRules;
+    property CountLinks: Integer read GetCountLinks;
     property ProcessedLines: integer read FLineCounter;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStringList; const AOnlyGeoZones: Boolean=true);
@@ -420,6 +422,11 @@ end;
 function TPascalTZ.GetCountRules: Integer;
 begin
   Result := FRules.Count;
+end;
+
+function TPascalTZ.GetCountLinks: Integer;
+begin
+  Result := FLinks.Count;
 end;
 
 procedure TPascalTZ.GetTimeZoneNames(const AZones: TStringList;
