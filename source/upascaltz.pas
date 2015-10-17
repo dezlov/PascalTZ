@@ -339,7 +339,7 @@ begin
     NewRule.InMonth:=MonthNumberFromShortName(TmpWord);
     //On Rule...
     TmpWord:=AIterator.GetNextWord;
-    if sizeOf(NewRule.OnRule)<Length(TmpWord) then begin
+    if Length(TmpWord)>TZ_ONRULE_SIZE then begin
       Raise TTZException.CreateFmt('ON Rule condition at "%s" too long. (Increase source code TZ_ONRULE_SIZE)',[AIterator.CurrentLine]);
     end;
     NewRule.OnRule:=TmpWord;

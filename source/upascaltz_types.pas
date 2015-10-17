@@ -42,10 +42,6 @@ const
 type
   AsciiChar=AnsiChar;
   AsciiString=AnsiString;
-  TTZRuleName=array [0..TZ_RULENAME_SIZE-1] of AsciiChar;
-  TTZZoneName=array [0..TZ_ZONENAME_SIZE-1] of AsciiChar;
-  TTZTimeZoneLetters=array [0..TZ_TIMEZONELETTERS_SIZE-1] of AsciiChar;
-  TTZOnRule=array [0..TZ_ONRULE_SIZE-1] of AsciiChar;
   TParseSequence=(TTzParseRule,TTzParseZone,TTzParseLink,TTzParseFinish);
   TTZMonth=  1..12;
   TTZDay=    1..31;
@@ -64,26 +60,26 @@ end;
 
 TTZRule=class
 public
-  Name: TTZRuleName;
+  Name: AsciiString;
   FromYear: integer;
   ToYear: integer;
   InMonth: BYTE;
-  OnRule: TTZOnRule;
+  OnRule: AsciiString;
   AtHourGMT: Boolean;
   AtHourTime: integer; //seconds
   SaveTime: integer;   //seconds
-  TimeZoneLetters: TTZTimeZoneLetters;
+  TimeZoneLetters: AsciiString;
 end;
 
 TTZRuleList = specialize TFPGObjectList<TTZRule>;
 
 TTzZone=class
 public
-  Name: TTZZoneName;
+  Name: AsciiString;
   Offset: integer; //seconds
   RuleIndex: integer; //Rule index in rules array.
   RuleFixedOffset: integer; //seconds
-  TimeZoneLetters: TTZTimeZoneLetters;
+  TimeZoneLetters: AsciiString;
   RuleValidUntilGMT: Boolean;
   RuleValidUntil: TTZDateTime;
 end;
