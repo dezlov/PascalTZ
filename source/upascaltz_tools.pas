@@ -42,6 +42,7 @@ function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
 function TimeToSeconds(const ATime: AsciiString): integer;
 function ElapsedDaysSinceADToDate(const AElapsedDays: integer): TTZDateTime;
 function ElapsedDaysSinceAD(const ADate: TTZDateTime): integer;
+function IsGeoZoneName(const AZone: AsciiString): Boolean;
 
 const
   TTZMonthDaysCount:
@@ -53,6 +54,11 @@ implementation
 
 uses
   DateUtils;
+
+function IsGeoZoneName(const AZone: AsciiString): Boolean;
+begin
+  Result := (Pos('/', AZone) > 0);
+end;
 
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
 begin

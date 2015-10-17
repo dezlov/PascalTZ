@@ -60,7 +60,7 @@ type
     property CountLinks: Integer read GetCountLinks;
     property ProcessedLines: integer read FLineCounter;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
-    procedure GetTimeZoneNames(const AZones: TStringList; const AOnlyGeoZones: Boolean=true);
+    procedure GetTimeZoneNames(const AZones: TStrings; const AOnlyGeoZones: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime; overload;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
@@ -429,25 +429,24 @@ begin
   Result := FLinks.Count;
 end;
 
-procedure TPascalTZ.GetTimeZoneNames(const AZones: TStringList;
-  const AOnlyGeoZones: Boolean);
+procedure TPascalTZ.GetTimeZoneNames(const AZones: TStrings;
+  const AOnlyGeoZones: Boolean = True);
 var
-  j: integer;
-  LT: AsciiString;
+  I: Integer;
+  Name: AsciiString;
+  AddName: Boolean;
 begin
   AZones.Clear;
-  LT:='';
-  for j := 0 to FZones.Count-1 do begin
-    if FZones[j].Name<>LT Then begin
-      LT:=FZones[j].Name;
-      if AOnlyGeoZones then begin
-        if Pos('/',LT)>0 then begin
-          AZones.Add(LT);
-        end;
-      end else begin
-        AZones.Add(LT);
-      end;
-    end;
+  for I := 0 to FZones.Count-1 do
+  begin
+    Name := FZones[I].Name;
+    if AOnlyGeoZones then
+      AddName := IsGeoZoneName(Name)
+    else
+      AddName := True;
+    if AddName then
+      if AZones.IndexOf(Name) < 0 then
+        AZones.Add(Name);
   end;
 end;
 
