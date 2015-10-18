@@ -29,33 +29,25 @@ The database is presented in different files, so you can load one of them using 
 
 Amount of read lines in database.
 
-#### `DetectInvalidLocalTimes` [True|False] (default true)
+#### `DetectInvalidLocalTimes`
 
-When converting it will check if the given time is impossible (does not
-exists). This happends, in example, when a local time changes from 2:00
-to 3:00, if the time to be converted is 2:01 at the change date, that
-time does not exists as it is not linear.
+When converting time, it will check if the given time is impossible (does not exist). This happens, for example, when local time changes from 2:00 to 3:00. If the time to be converted is 2:01 at the change date, that time does not exist as it is not linear.
 
 #### `GetTimeZoneNames`
 
-Returns a TStringList with the time zones available in the database. This
-names must be used for local times to perform conversions. It is not a
-country list, as many countries have several time zones. AOnlyGeoZones
-removes from the list the usual "GMT, BST, PST" from the list.
+Populates the supplied `TStringList` with time zones available in the database. `AOnlyGeoZones` removes from the list time zones which are not formatted geographically as "*Area/Location*", such as *GMT, BST, PST*.
 
 #### `GMTToLocalTime`
 
-Converts a GMT/UTC/Zulu time to a time zone (AToZone). ATimeZoneSubFix
-returns the subfix for that zone like "GMT, BST, ...".
+Converts a GMT/UTC/Zulu time to a time zone (`AToZone`). `ATimeZoneSubFix` returns the subfix for that zone, for example: *GMT, BST, PST*.
 
 #### `LocalTimeToGMT`
 
-Converts a local time at time zone "AFromZone" to GMT/UTC/Zulu time.
+Converts a local time at time zone `AFromZone` to GMT/UTC/Zulu time.
 
 #### `TimeZoneToTimeZone`
 
-Converts time across zones. Basically this performs a local time to
-GMT and GTM to the new local time.
+Converts time across zones. Basically this performs a local time to GMT and GTM to the new local time.
 
 #### `ParseDatabaseFromFile`
 
