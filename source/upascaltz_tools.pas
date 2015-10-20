@@ -31,6 +31,8 @@ function CompareDates(const ADate,BDate: TTZDateTime): integer;
 function IsGregorianLeap(const ADate: TTZDateTime): Boolean;
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
 function IsBeforeGregorianLeap(const ADate: TTZDateTime): Boolean;
+function ExtractTimeForm(var TimeStr: AsciiString; out TimeForm: TTZTimeForm): Boolean;
+function ExtractTimeFormDefault(var TimeStr: AsciiString; const Default: TTZTimeForm): TTZTimeForm;
 function ParseUntilFields(const AIterator: TTZLineIterate; out AGMTTime: Boolean): TTZDateTime;
 procedure MacroSolver(var ADate: TTZDateTime; const ADayString: AsciiString);
 function MacroFirstWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay): TTZDay;
@@ -270,11 +272,34 @@ begin
     Raise TTZException.Create('Unknown day name: ' + ADayName);
 end;
 
+function ExtractTimeForm(var TimeStr: AsciiString; out TimeForm: TTZTimeForm): Boolean;
+var
+  TimeFormChar: AsciiChar;
+begin
+  Result := False;
+  if Length(TimeStr) > 0 then
+  begin
+    TimeFormChar := TimeStr[Length(TimeStr)];
+    case TimeFormChar of
+      'w':         begin TimeForm := tztfWallClock; Result := True; end;
+      's':         begin TimeForm := tztfStandard;  Result := True; end;
+      'u','g','z': begin TimeForm := tztfUniversal; Result := True; end;
+    end;
+    if Result then
+      Delete(TimeStr, Length(TimeStr), 1);
+  end;
+end;
+
+function ExtractTimeFormDefault(var TimeStr: AsciiString; const Default: TTZTimeForm): TTZTimeForm;
+begin
+  if not ExtractTimeForm(TimeStr, Result) then
+    Result := Default;
+end;
+
 function ParseUntilFields(const AIterator: TTZLineIterate;
   out AGMTTime: Boolean): TTZDateTime;
 var
   TmpWord: AsciiString;
-  Letter: AsciiChar;
 begin
   //Default Values...
   with Result do begin
@@ -307,13 +332,16 @@ begin
 
   TmpWord:=AIterator.GetNextWord;
   if TmpWord='' then Exit;
-  if not (TmpWord[Length(TmpWord)] in ['0'..'9']) then begin
-    Letter:=TmpWord[Length(TmpWord)];
-    if Letter='s' then begin
-      AGMTTime:=false;
-    end;
-    SetLength(TmpWord,Length(TmpWord)-1);
-  end;
+  // TODO: Need to properly use all possible time forms in ParseUntilFields
+  // Default time form for UNTIL field in ZONE definition seems to be UTC.
+  // It is not officially documented by can be extracted from examples in ZIC man page:
+  // > Zurich was 34 minutes and 8 seconds west of GMT until 1848-09-12 at 00:00,
+  // > when the offset changed to 29 minutes and 44 seconds.
+  // > # Zone  NAME           GMTOFF   RULES       FORMAT  UNTIL
+  // > Zone    Europe/Zurich  0:34:08  -           LMT     1848 Sep 12
+  // >                        0:29:44  -           BMT     1894 Jun
+  // The default UNTIL time of 00:00 applies whis assumed to be GMT in ZIC man page.
+  AGMTTime := ExtractTimeFormDefault(TmpWord, tztfUniversal) = tztfUniversal;
   Result.SecsInDay:=TimeToSeconds(TmpWord);
 end;
 

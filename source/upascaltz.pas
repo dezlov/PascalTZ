@@ -370,7 +370,6 @@ procedure TPascalTZ.BareParseRule(const AIterator: TTZLineIterate);
 var
   Index: integer;
   TmpWord: AsciiString;
-  StandardTimeFlag: char;
   NewRule: TTZRule;
 begin
   NewRule := TTZRule.Create;
@@ -416,15 +415,9 @@ begin
     NewRule.OnRule:=TmpWord;
     //AT field
     TmpWord:=AIterator.GetNextWord;
-    StandardTimeFlag:=TmpWord[Length(TmpWord)];
-    if StandardTimeFlag in ['s','u','g'] Then begin
-      if StandardTimeFlag='s' then begin
-        NewRule.AtHourGMT:=false;
-      end else begin
-        NewRule.AtHourGMT:=true;
-      end;
-      TmpWord:=Copy(TmpWord,1,Length(TmpWord)-1); //remove the standard time flag
-    end;
+    // TODO: Need to properly use all possible time forms in BareParseRule
+    // ZIC man page: In the absence of an indicator, wall clock time is assumed.
+    NewRule.AtHourGMT := ExtractTimeFormDefault(TmpWord, tztfWallClock) = tztfUniversal;
     NewRule.AtHourTime:=TimeToSeconds(TmpWord);
     //SAVE field
     TmpWord:=AIterator.GetNextWord;
