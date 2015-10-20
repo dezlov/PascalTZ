@@ -81,7 +81,7 @@ type
 implementation
 
 uses
-  RtlConsts, DateUtils, uPascalTZ_Tools;
+  RtlConsts, DateUtils, Math, uPascalTZ_Tools;
 
 { TPascalTZ }
 
@@ -150,51 +150,71 @@ begin
   end;
 end;
 
+function GetRuleBeginDate(const ARule: TTZRule; const Year, OffsetSecsInDay: Integer): TTZDateTime;
+begin
+  Result.Year := Year;
+  Result.Month := ARule.InMonth;
+  Result.Day := 1;
+  MacroSolver(Result, ARule.OnRule);
+  Result.SecsInDay := ARule.AtHourTime + OffsetSecsInDay;
+  FixUpTime(Result);
+end;
+
 function TPascalTZ.FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
   const ADateTime: TTZDateTime; const AConvertToZone: Boolean): Integer;
 var
-  j: Integer;
+  I: Integer;
   RuleName: AsciiString;
-  RuleBeginDate, RuleEndDate, UsedRuleBeginDate: TTZDateTime;
+  RuleBeginDate, SelectedRuleBeginDate: TTZDateTime;
+  RuleTimeOffset, ApplyYear: Integer;
+  SelectRule: Boolean;
 begin
-  Result:=-1;
-  j := RuleIndexStart;
-  RuleName := FRules[j].Name;
-  while (j<=FRules.Count-1) and (FRules[j].Name=RuleName) do
+  Result := -1;
+
+  // Name of the rule
+  RuleName := FRules[RuleIndexStart].Name;
+
+  // Calculate offset for converting UTC time to the timezone of ADateTime value.
+  if AConvertToZone then
+    // When ADateTime is in UTC, no offset is needed.
+    RuleTimeOffset := 0
+  else
+    // When ADateTime in Local Time Zone, apply standard time offset
+    RuleTimeOffset := FZones[ZoneIndex].Offset; // The amount of time to add to UTC to get standard time in this zone.
+
+  // Find a rule with the most recent date of activation, prior to ADateTime.
+  for I := RuleIndexStart to FRules.Count-1 do
   begin
-    if (ADateTime.Year>=FRules[j].FromYear) and (ADateTime.Year<=FRules[j].ToYear) then
+    // Skip differently named rules
+    if FRules[I].Name = RuleName then
     begin
-      //The year is in the rule range, so discard year information...
-      RuleBeginDate.Year:=ADateTime.Year;
-      RuleBeginDate.Month:=FRules[j].InMonth;
-      MacroSolver(RuleBeginDate,FRules[j].OnRule);
-      RuleBeginDate.SecsInDay:=FRules[j].AtHourTime;
-      if not AConvertToZone then
-        Inc(RuleBeginDate.SecsInDay, FZones[ZoneIndex].Offset);
-
-      RuleEndDate.Year:=ADateTime.Year;
-      RuleEndDate.Month:=12;
-      RuleEndDate.Day:=31;
-      RuleEndDate.SecsInDay:=SecsPerDay;
-
-      // Ensure that we use the latest applicable rule, once it has passed the initial range.
-      // When rules are sorted by year and then by month, it doesn't guarantee that
-      // all applicable rules for the year in question are also in ascending order by month.
-      // For example: Rule1 = 2000-2010 Oct; Rule2 = 2005-2010 Mar; for years 2005-2010
-      // both rules are applicable but they are not in ascending order by month (Oct, Mar),
-      // so simply using the last rule in the list will not work!
-      if (CompareDates(ADateTime,RuleBeginDate)>=0) and
-         (CompareDates(ADateTime,RuleEndDate)<=0) then
+      // Find the most recent date when rule got activated
+      SelectRule := False;
+      ApplyYear := Min(FRules[I].ToYear, ADateTime.Year);
+      while (ApplyYear >= FRules[I].FromYear) do
       begin
-        // "UsedRuleBeginDate" not initialized is ok by design!
-        if (Result < 0) or (CompareDates(RuleBeginDate, UsedRuleBeginDate)>=0) then
+        RuleBeginDate := GetRuleBeginDate(FRules[I], ApplyYear, RuleTimeOffset);
+        SelectRule := CompareDates(RuleBeginDate, ADateTime) <= 0; // before ADateTime
+        if SelectRule then
+          Break;
+        Dec(ApplyYear); // try previous year
+      end;
+
+      // Update the currently selected rule
+      if SelectRule then
+      begin
+        // If already have a selected a rule, pick the most recent of two rules
+        if Result >= 0 then
+          SelectRule := (CompareDates(RuleBeginDate, SelectedRuleBeginDate) >= 0);
+
+        // Select the current rule
+        if SelectRule then
         begin
-          Result := j;
-          UsedRuleBeginDate := RuleBeginDate;
+          Result := I;
+          SelectedRuleBeginDate := RuleBeginDate;
         end;
       end;
     end;
-    inc(j);
   end;
 end;
 
