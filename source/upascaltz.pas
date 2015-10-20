@@ -382,7 +382,7 @@ begin
     //And finally the UNTIL field which format is optional fields from
     //left to right: year month day hour[s]
     //defaults:      YEAR Jan   1   0:00:00
-    NewZone.RuleValidUntil:=ParseUntilFields(AIterator,NewZone.RuleValidUntilGMT);
+    NewZone.RuleValidUntil:=ParseUntilFields(AIterator,NewZone.RuleValidUntilForm);
   end;
 end;
 
@@ -437,7 +437,7 @@ begin
     TmpWord:=AIterator.GetNextWord;
     // TODO: Need to properly use all possible time forms in BareParseRule
     // ZIC man page: In the absence of an indicator, wall clock time is assumed.
-    NewRule.AtHourGMT := ExtractTimeFormDefault(TmpWord, tztfWallClock) = tztfUniversal;
+    NewRule.AtHourTimeForm := ExtractTimeFormDefault(TmpWord, tztfWallClock);
     NewRule.AtHourTime:=TimeToSeconds(TmpWord);
     //SAVE field
     TmpWord:=AIterator.GetNextWord;

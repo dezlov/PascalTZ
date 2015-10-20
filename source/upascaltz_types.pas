@@ -66,7 +66,7 @@ public
   ToYear: integer;
   InMonth: BYTE;
   OnRule: AsciiString;
-  AtHourGMT: Boolean;
+  AtHourTimeForm: TTZTimeForm;
   AtHourTime: integer; //seconds
   SaveTime: integer;   //seconds
   TimeZoneLetters: AsciiString;
@@ -81,7 +81,7 @@ public
   RuleName: AsciiString;
   RuleFixedOffset: integer; //seconds
   TimeZoneLetters: AsciiString;
-  RuleValidUntilGMT: Boolean;
+  RuleValidUntilForm: TTZTimeForm;
   RuleValidUntil: TTZDateTime;
 end;
 
