@@ -95,9 +95,9 @@ var
 begin
   if ADate.SecsInDay<0 then begin
     //Decrease some day(s)
-    Days:=(ADate.SecsInDay*-1) div (3600*24);
-    ADate:=IncDays(ADate,Days*-1);
-    ADate.SecsInDay:=ADate.SecsInDay+Days*3600*24;
+    Days:=(ADate.SecsInDay) div (3600*24) - 1; // negative days
+    ADate:=IncDays(ADate,Days); // negative days
+    ADate.SecsInDay:=ADate.SecsInDay-Days*3600*24; // double negative days => positive
   end else if ADate.SecsInDay>=(3600*24) then begin
     //Increase some day(s)
     Days:=ADate.SecsInDay div (3600*24);
