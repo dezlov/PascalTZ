@@ -21,7 +21,7 @@ uses
   SysUtils, uPascalTZ_Types;
 
 procedure FixUpTime(var ADate: TTZDateTime);
-function IncDays(const ADate: TTZDateTime; const ADays: integer): TTZDateTime;
+function IncDays(const ADate: TTZDateTime; const ADays: Integer): TTZDateTime;
 procedure DateTimeToTime(const ADate: TTZDateTime; out AHour,AMinute,ASecond: BYTE);
 function DateTimeToStr(const ADate: TTZDateTime): String;
 function TZDateToPascalDate(const ADate: TTZDateTime): TDateTime;
@@ -42,9 +42,9 @@ function IsLeapYear(const AYear: integer): Boolean;
 function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
 function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
 function TimeToSeconds(const ATime: AsciiString): integer;
-function ElapsedDaysSinceADToDate(const AElapsedDays: integer): TTZDateTime;
-function ElapsedDaysSinceAD(const ADate: TTZDateTime): integer;
 function IsGeoZoneName(const AZone: AsciiString): Boolean;
+function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
+function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
 
 const
   TTZMonthDaysCount:
@@ -176,34 +176,6 @@ begin
   end else begin
     Raise TTZException.CreateFmt('Invalid short month name "%s"',[AMonth]);
   end;
-end;
-
-function ElapsedDaysSinceAD(const ADate: TTZDateTime): integer;
-var
-  Elapsed: integer;
-  j: integer;
-  TempYear: integer;
-begin
-  IsGregorianLeapException(ADate);
-  TempYear:=ADate.Year-1;
-  if IsBeforeGregorianLeap(ADate) Then begin
-    Elapsed:=(TempYear*365)+(TempYear div 4);
-  end else begin
-    Elapsed:=(TempYear*365)+(TempYear div 4)-((TempYear) div 100)+((TempYear) div 400);
-    Elapsed:=Elapsed-10+15-3; //Gregorian elapsed days and false leap years
-  end;
-  //Here some maths will simplify it...
-  if IsLeapYear(ADate.Year) then begin
-    for j := 1 to ADate.Month-1 do begin
-      Elapsed:=Elapsed+TTZMonthDaysLeapYearCount[j];
-    end;
-  end else begin
-    for j := 1 to ADate.Month-1 do begin
-      Elapsed:=Elapsed+TTZMonthDaysCount[j];
-    end;
-  end;
-  inc(Elapsed,ADate.Day);
-  Result:=Elapsed;
 end;
 
 function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
@@ -557,15 +529,14 @@ begin
   Result:=format('%.4d.%.2d.%.2d %.2d:%.2d:%.2d',[ADate.Year,ADate.Month,ADate.Day,H,M,S]);
 end;
 
-function IncDays(const ADate: TTZDateTime; const ADays: integer
-  ): TTZDateTime;
+function IncDays(const ADate: TTZDateTime; const ADays: Integer): TTZDateTime;
 var
-  Elapsed: integer;
+  JulianDays: Integer;
 begin
-  Elapsed:=ElapsedDaysSinceAD(ADate);
-  inc(Elapsed,ADays);
-  Result:=ElapsedDaysSinceADToDate(Elapsed);
-  Result.SecsInDay:=Adate.SecsInDay;
+  JulianDays := GregorianDateToJulianDays(ADate);
+  Inc(JulianDays, ADays);
+  Result := JulianDaysToGregorianDate(JulianDays);
+  Result.SecsInDay := ADate.SecsInDay;
 end;
 
 function TZDateToPascalDate(const ADate: TTZDateTime): TDateTime;
@@ -582,96 +553,76 @@ begin
   Result.SecsInDay:=HourOf(ADate)*3600+MinuteOf(ADate)*60+SecondOf(ADate);
 end;
 
-function ElapsedDaysSinceADToDate(const AElapsedDays: integer
-  ): TTZDateTime;
+//******************************************************************************
+// Convert "Gregorian Calendar Date" to "Julian Day Number". Time of day is ignored.
+// The number of days is since Julian Date Epox: 12:00 Jan 1, 4713 BC.
+//
+// The algorithm is valid at least for all positive Julian Day Numbers.
+//
+// Implemented according to a formula on Wikipedia page:
+// https://en.wikipedia.org/wiki/Julian_day#Converting_Julian_or_Gregorian_calendar_date_to_Julian_Day_Number
+//
+// See Also:
+// DateTimeToJulianDate, DateTimeToModifiedJulianDate in FPC DateUtils unit.
+//******************************************************************************
+function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 var
-  TYear: integer;
-  Temporal,Acumulator: integer;
-  j: integer;
+  a, y, m: Integer;
 begin
-  if AElapsedDays>=FIRST_POSTGREGORIAN_DAY then begin
-    Acumulator:=AElapsedDays-15+3+10; // -15+3+10 missing leap years pre gregorian and gregorian leap days
-    //400 years
-    Temporal:=Acumulator div 146097;
-    TYear:=Temporal*400;
-    dec(Acumulator,Temporal*146097);
-    //Centuries
-    Temporal:=Acumulator div 36524;
-    inc(TYear,Temporal*100);
-    dec(Acumulator,Temporal*36524);
-    //"Normal" leap every 4
-    Temporal:=Acumulator div 1461;
-    inc(TYear,Temporal*4);
-    dec(Acumulator,Temporal*1461);
-    //Regular years...
-    Temporal:=Acumulator div 365;
-    inc(TYear,Temporal);
-    dec(Acumulator,Temporal*365);
-
-    //now d is the day in the year...
-
-    if Acumulator>0 then begin
-      inc(TYear);
-    end else begin
-      if IsLeapYear(TYear) then begin
-        Acumulator:=366;
-      end else begin
-        Acumulator:=365;
-      end;
-    end;
-    Result.Year:=TYear;
-  end else begin
-    Acumulator:=AElapsedDays;
-
-    //"Normal" leap every 4
-    Temporal:=Acumulator div 1461;
-    TYear:=Temporal*4;
-    dec(Acumulator,Temporal*1461);
-    //Regular years...
-    Temporal:=Acumulator div 365;
-    inc(TYear,Temporal);
-    dec(Acumulator,Temporal*365);
-    //now d is the day in the year...
-
-    if Acumulator>0 then begin
-      inc(TYear);
-    end else begin
-      if IsLeapYear(TYear) then begin
-        Acumulator:=366;
-      end else begin
-        Acumulator:=365;
-      end;
-    end;
-    Result.Year:=TYear;
-  end;
-  //This could be done with some maths, but for now leave it with a for..loop
-  if IsLeapYear(TYear) Then begin
-    for j := 1 to 12 do begin
-      if Acumulator<=TTZMonthDaysLeapYearCount[j] then begin
-        Result.Month:=j;
-        Result.Day:=Acumulator;
-        dec(Acumulator,Acumulator);
-        break;
-      end else begin
-        dec(Acumulator,TTZMonthDaysLeapYearCount[j]);
-      end;
-    end;
-  end else begin
-    for j := 1 to 12 do begin
-      if Acumulator<=TTZMonthDaysCount[j] then begin
-        Result.Month:=j;
-        Result.Day:=Acumulator;
-        dec(Acumulator,Acumulator);
-        break;
-      end else begin
-        dec(Acumulator,TTZMonthDaysCount[j]);
-      end;
-    end;
-  end;
-  if Acumulator<>0 then begin
-    Raise TTZException.Create('Internal error');
-  end;
+  a := (14 - Value.Month) div 12;
+  y := Value.Year + 4800 - a;
+  m := Value.Month + 12 * a - 3;
+  Result := Value.Day
+    + ((153 * m + 2) div 5)
+    + (365 * y)
+    + (y div 4)
+    - (y div 100)
+    + (y div 400)
+    - 32045;
 end;
+
+//******************************************************************************
+// Convert "Julian Day Number" to "Gregorian Calendar Date". Time of day is set to zero.
+// The number of days is since Julian Date Epox: 12:00 Jan 1, 4713 BC.
+//
+// This is an algorithm by Richards to convert a Julian Day Number to
+// a date in the Gregorian calendar (proleptic, when applicable).
+// Richards does not state which dates the algorithm is valid for.
+//
+// Implemented according to a formula on Wikipedia page:
+// https://en.wikipedia.org/wiki/Julian_day#Julian_or_Gregorian_calendar_from_Julian_day_number
+//
+// See Also:
+// JulianDateToDateTime, ModifiedJulianDateToDateTime in FPC DateUtils unit.
+//******************************************************************************
+function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
+const
+  y=4716; v=3;
+  j=1401; u=5;
+  m=2;    s=153;
+  n=12;   w=2;
+  r=4;    B=274277;
+  p=1461; C=-38;
+var
+  f, e, g, h: Integer;
+begin
+  // f = J + j + (((4 × J + B) div 146097) × 3) div 4 + C
+  f := Value + j + (((4 * Value + B) div 146097) * 3) div 4 + C;
+  // e = r × f + v
+  e := r * f + v;
+  // g = mod(e, p) div r
+  g := (e mod p) div r;
+  // h = u × g + w
+  h := u * g + w;
+  // D = (mod(h, s)) div u + 1
+  Result.Day := (h mod s) div u + 1;
+  // M = mod(h div s + m, n) + 1
+  Result.Month := ((h div s + m) mod n) + 1;
+  // Y = (e div p) - y + (n + m - M) div n
+  Result.Year := (e div p) - y + (n + m - Result.Month) div n;
+  Result.SecsInDay := 0;
+end;
+
 
 end.
 
