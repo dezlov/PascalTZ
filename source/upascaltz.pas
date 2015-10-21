@@ -59,7 +59,7 @@ type
     property CountRules: Integer read GetCountRules;
     property CountLinks: Integer read GetCountLinks;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
-    procedure GetTimeZoneNames(const AZones: TStrings; const AOnlyGeoZones: Boolean = True; const AIncludeLinks: Boolean = True);
+    procedure GetTimeZoneNames(const AZones: TStrings; const AIncludeLinks: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime; overload;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
@@ -484,36 +484,25 @@ begin
 end;
 
 procedure TPascalTZ.GetTimeZoneNames(const AZones: TStrings;
-  const AOnlyGeoZones: Boolean = True; const AIncludeLinks: Boolean = True);
+  const AIncludeLinks: Boolean = True);
 var
   I: Integer;
   Name: AsciiString;
-  AddName: Boolean;
 begin
   AZones.Clear;
   for I := 0 to FZones.Count-1 do
   begin
     Name := FZones[I].Name;
-    if AOnlyGeoZones then
-      AddName := IsGeoZoneName(Name)
-    else
-      AddName := True;
-    if AddName then
-      if AZones.IndexOf(Name) < 0 then
-        AZones.Add(Name);
+    if AZones.IndexOf(Name) < 0 then
+      AZones.Add(Name);
   end;
   if AIncludeLinks then
   begin
     for I := 0 to FLinks.Count-1 do
     begin
       Name := FLinks[I].LinkTo;
-      if AOnlyGeoZones then
-        AddName := IsGeoZoneName(Name)
-      else
-        AddName := True;
-      if AddName then
-        if AZones.IndexOf(Name) < 0 then
-          AZones.Add(Name);
+      if AZones.IndexOf(Name) < 0 then
+        AZones.Add(Name);
     end;
   end;
 end;

@@ -42,7 +42,6 @@ function IsLeapYear(const AYear: integer): Boolean;
 function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
 function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
 function TimeToSeconds(const ATime: AsciiString): integer;
-function IsGeoZoneName(const AZone: AsciiString): Boolean;
 function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
 
@@ -56,11 +55,6 @@ implementation
 
 uses
   DateUtils;
-
-function IsGeoZoneName(const AZone: AsciiString): Boolean;
-begin
-  Result := (Pos('/', AZone) > 0);
-end;
 
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
 begin
