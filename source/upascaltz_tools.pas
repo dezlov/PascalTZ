@@ -406,7 +406,7 @@ var
   Seconds: TTZSecond;
 begin
   //Time could be expressed in:
-  // [-]m = minutes
+  // [-]h = hours
   // [-]h:m = hours:minutes
   // [-]h:m:s = hours:minutes:seconds
   //So count the amount of ':' to get the format
@@ -425,8 +425,8 @@ begin
     end;
   end;
   case TwoColons of
-    0:  begin //Format is "m" minutes.
-          Result:=StrToInt(TmpTime)*60; //No range check as it could be a big amount.
+    0:  begin //Format is "h"
+          Result:=StrToInt(TmpTime)*3600;
         end;
     1:  begin //Format is "hh:mm"
           TimeIterator:=TTZLineIterate.Create(TmpTime,':');
