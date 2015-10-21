@@ -40,6 +40,7 @@ const
   FIRST_POSTGREGORIAN_DAY=LAST_PREGREGORIAN_DAY+1;
 
 type
+  PAsciiChar=^AsciiChar;
   AsciiChar=AnsiChar;
   AsciiString=AnsiString;
   TParseSequence=(TTzParseRule,TTzParseZone,TTzParseLink,TTzParseFinish);

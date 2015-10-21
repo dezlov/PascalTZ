@@ -71,6 +71,7 @@ type
     function ParseDatabaseFromFile(const AFileName: String): Boolean;
     function ParseDatabaseFromFiles(const AFileNames: array of String): Boolean;
     function ParseDatabaseFromStream(const AStream: TStream): Boolean;
+    procedure ParseDatabaseFromMemory(const AData: Pointer; const ADataSize: Integer);
     constructor Create;
     destructor Destroy; override;
   end;
@@ -724,59 +725,61 @@ end;
 
 function TPascalTZ.ParseDatabaseFromStream(const AStream: TStream): Boolean;
 var
-  Buffer: PChar;
-  FileSize: integer;
-  LineBegin: integer;
-  LineSize: integer;
-  ThisLine: AsciiString;
-  ParseSequence: TParseSequence;
-  LineCounter: Integer;
+  Buffer: Pointer;
+  BufferSize: Integer;
 begin
+  BufferSize := AStream.Size - AStream.Position;
+  Buffer := GetMem(BufferSize);
+  if not Assigned(Buffer) then // depends on variable "ReturnNilIfGrowHeapFails"
+    raise EOutOfMemory.Create(SErrOutOfMemory);
+  try
+    AStream.ReadBuffer(Buffer^, BufferSize);
+    ParseDatabaseFromMemory(Buffer, BufferSize);
+    Result := True;
+  finally
+    FreeMem(Buffer);
+  end;
+end;
+
+procedure TPascalTZ.ParseDatabaseFromMemory(const AData: Pointer; const ADataSize: Integer);
+var
+  Buffer: PAsciiChar;
+  ThisLine: AsciiString;
+  LineBegin, LineSize, LineCounter: Integer;
+  ParseSequence: TParseSequence;
+begin
+  Buffer := AData;
   ParseStatusTAG := '';
   ParseStatusPreviousZone := '';
-  FileSize:=AStream.Size;
-  Buffer:=nil;
-  GetMem(Buffer,FileSize);
-  if not Assigned(Buffer) Then begin
-    raise EOutOfMemory.Create(SErrOutOfMemory);
-  end;
-  try
-    if AStream.Read(Buffer^,FileSize)<>FileSize then begin
-      Raise EStreamError.Create('Stream read error');
-    end;
-    ParseSequence:=TTzParseRule;
-    while ParseSequence<TTzParseFinish do begin
-      LineCounter:=1;
-      LineBegin:=0;
-      LineSize:=0;
-      while LineBegin<FileSize do begin
-        if (Buffer[LineBegin+LineSize]=#13) or (Buffer[LineBegin+LineSize]=#10) then begin
-          SetLength(ThisLine,LineSize);
-          Move(Buffer[LineBegin],ThisLine[1],LineSize);
-          ParseLine(LineCounter, ThisLine, ParseSequence);
-          inc(LineBegin,LineSize);
-          LineSize:=0;
-          while (LineBegin<FileSize) and ((Buffer[LineBegin]=#13) or (Buffer[LineBegin]=#10)) do begin
-            if Buffer[LineBegin]=#10 then begin
-              inc(LineCounter);
-            end;
-            inc(LineBegin);
-          end;
-        end else begin
-          inc(LineSize);
-        end;
-      end;
-      if LineSize>0 then begin
-        inc(LineCounter);
+  ParseSequence:=TTzParseRule;
+  while ParseSequence<TTzParseFinish do begin
+    LineCounter:=1;
+    LineBegin:=0;
+    LineSize:=0;
+    while LineBegin<ADataSize do begin
+      if (Buffer[LineBegin+LineSize]=#13) or (Buffer[LineBegin+LineSize]=#10) then begin
         SetLength(ThisLine,LineSize);
         Move(Buffer[LineBegin],ThisLine[1],LineSize);
         ParseLine(LineCounter, ThisLine, ParseSequence);
+        inc(LineBegin,LineSize);
+        LineSize:=0;
+        while (LineBegin<ADataSize) and ((Buffer[LineBegin]=#13) or (Buffer[LineBegin]=#10)) do begin
+          if Buffer[LineBegin]=#10 then begin
+            inc(LineCounter);
+          end;
+          inc(LineBegin);
+        end;
+      end else begin
+        inc(LineSize);
       end;
-      ParseSequence:=Succ(ParseSequence);
     end;
-    Result:=true;
-  finally
-    FreeMem(Buffer);
+    if LineSize>0 then begin
+      inc(LineCounter);
+      SetLength(ThisLine,LineSize);
+      Move(Buffer[LineBegin],ThisLine[1],LineSize);
+      ParseLine(LineCounter, ThisLine, ParseSequence);
+    end;
+    ParseSequence:=Succ(ParseSequence);
   end;
 end;
 
