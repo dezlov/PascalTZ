@@ -68,9 +68,9 @@ type
     function LocalTimeToGMT(const ADateTime: TDateTime; const AFromZone: String): TDateTime;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime; overload;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneSubFix: String): TDateTime; overload;
-    function ParseDatabaseFromFile(const AFileName: String): Boolean;
-    function ParseDatabaseFromFiles(const AFileNames: array of String): Boolean;
-    function ParseDatabaseFromStream(const AStream: TStream): Boolean;
+    procedure ParseDatabaseFromFile(const AFileName: String);
+    procedure ParseDatabaseFromFiles(const AFileNames: array of String);
+    procedure ParseDatabaseFromStream(const AStream: TStream);
     procedure ParseDatabaseFromMemory(const AData: Pointer; const ADataSize: Integer);
     constructor Create;
     destructor Destroy; override;
@@ -686,19 +686,19 @@ begin
   Result:=TZDateToPascalDate(Tmp);
 end;
 
-function TPascalTZ.ParseDatabaseFromFile(const AFileName: String): Boolean;
+procedure TPascalTZ.ParseDatabaseFromFile(const AFileName: String);
 var
   FileStream: TFileStream;
 begin
   FileStream:=TFileStream.Create(AFileName,fmOpenRead or fmShareDenyWrite);
   try
-    Result:=ParseDatabaseFromStream(FileStream);
+    ParseDatabaseFromStream(FileStream);
   finally
     FileStream.Free;
   end;
 end;
 
-function TPascalTZ.ParseDatabaseFromFiles(const AFileNames: array of String): Boolean;
+procedure TPascalTZ.ParseDatabaseFromFiles(const AFileNames: array of String);
 var
   ADatabaseStream: TStringStream;
   AFileStream: TFileStream;
@@ -717,13 +717,13 @@ begin
       end;
     end;
     ADatabaseStream.Position := 0;
-    Result := ParseDatabaseFromStream(ADatabaseStream);
+    ParseDatabaseFromStream(ADatabaseStream);
   finally
     ADatabaseStream.Free;
   end;
 end;
 
-function TPascalTZ.ParseDatabaseFromStream(const AStream: TStream): Boolean;
+procedure TPascalTZ.ParseDatabaseFromStream(const AStream: TStream);
 var
   Buffer: Pointer;
   BufferSize: Integer;
@@ -735,7 +735,6 @@ begin
   try
     AStream.ReadBuffer(Buffer^, BufferSize);
     ParseDatabaseFromMemory(Buffer, BufferSize);
-    Result := True;
   finally
     FreeMem(Buffer);
   end;
