@@ -36,6 +36,7 @@ type
     function GetCountZones: Integer;
     function GetCountRules: Integer;
     function GetCountLinks: Integer;
+    function GetCountTimeZoneNames: Integer;
   protected
     FDetectInvalidLocalTimes: Boolean;
     FRules: TTZRuleList;
@@ -58,6 +59,7 @@ type
     property CountZones: Integer read GetCountZones;
     property CountRules: Integer read GetCountRules;
     property CountLinks: Integer read GetCountLinks;
+    property CountTimeZoneNames: Integer read GetCountTimeZoneNames;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStrings; const AIncludeLinks: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
@@ -481,6 +483,19 @@ end;
 function TPascalTZ.GetCountLinks: Integer;
 begin
   Result := FLinks.Count;
+end;
+
+function TPascalTZ.GetCountTimeZoneNames: Integer;
+var
+  Names: TStringList;
+begin
+  Names := TStringList.Create;
+  try
+    GetTimeZoneNames(Names);
+    Result := Names.Count;
+  finally
+    Names.Free;
+  end;
 end;
 
 procedure TPascalTZ.GetTimeZoneNames(const AZones: TStrings;
