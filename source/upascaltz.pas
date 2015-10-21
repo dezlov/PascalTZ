@@ -38,7 +38,6 @@ type
     function GetCountLinks: Integer;
   protected
     FDetectInvalidLocalTimes: Boolean;
-    FLineCounter: integer;
     FRules: TTZRuleList;
     FZones: TTZZoneList;
     FLinks: TTZLinkList;
@@ -59,7 +58,6 @@ type
     property CountZones: Integer read GetCountZones;
     property CountRules: Integer read GetCountRules;
     property CountLinks: Integer read GetCountLinks;
-    property ProcessedLines: integer read FLineCounter;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStrings; const AOnlyGeoZones: Boolean = True; const AIncludeLinks: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
@@ -728,6 +726,7 @@ var
   LineSize: integer;
   ThisLine: AsciiString;
   ParseSequence: TParseSequence;
+  LineCounter: Integer;
 begin
   ParseStatusTAG := '';
   ParseStatusPreviousZone := '';
@@ -743,19 +742,19 @@ begin
     end;
     ParseSequence:=TTzParseRule;
     while ParseSequence<TTzParseFinish do begin
-      FLineCounter:=1;
+      LineCounter:=1;
       LineBegin:=0;
       LineSize:=0;
       while LineBegin<FileSize do begin
         if (Buffer[LineBegin+LineSize]=#13) or (Buffer[LineBegin+LineSize]=#10) then begin
           SetLength(ThisLine,LineSize);
           Move(Buffer[LineBegin],ThisLine[1],LineSize);
-          ParseLine(FLineCounter, ThisLine, ParseSequence);
+          ParseLine(LineCounter, ThisLine, ParseSequence);
           inc(LineBegin,LineSize);
           LineSize:=0;
           while (LineBegin<FileSize) and ((Buffer[LineBegin]=#13) or (Buffer[LineBegin]=#10)) do begin
             if Buffer[LineBegin]=#10 then begin
-              inc(FLineCounter);
+              inc(LineCounter);
             end;
             inc(LineBegin);
           end;
@@ -764,10 +763,10 @@ begin
         end;
       end;
       if LineSize>0 then begin
-        inc(FLineCounter);
+        inc(LineCounter);
         SetLength(ThisLine,LineSize);
         Move(Buffer[LineBegin],ThisLine[1],LineSize);
-        ParseLine(FLineCounter, ThisLine, ParseSequence);
+        ParseLine(LineCounter, ThisLine, ParseSequence);
       end;
       ParseSequence:=Succ(ParseSequence);
     end;
