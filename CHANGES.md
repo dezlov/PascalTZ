@@ -4,6 +4,12 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+- Removed unused return value from all ParseDatabaseFromXXX functions.
+- Added ParseDatabaseFromMemory function.
+- Removed AOnlyGeoZones parameter from GetTimeZoneNames function, as it is inaccurate and infeasible.
+- Removed public ProcessedLines property, in favor of CountZones, CountRules, CountLinks properties.
+- Removed limitation for allowing to parse only one database stream. It no longer silently corrupts internal data.
+- Removed rule sorting code. Sorting rules after parsing is no longer necessary.
 - Fixed incorrect interpretation of time string in shortest form, i.e. time in hours.
 - Fixed inappropriately adjusted rule begin dates according to RULE AT field's time form (universal, standard, wall clock).
 - Fixed a problem with incorrectly adjusted dates when correcting overlapping seconds of day. Calculation of Days Since AD (DSAD) was replaced with Julian Day Number (JDN).
@@ -16,11 +22,10 @@ This change log contains the highlights of major changes. For details on all fin
 - Fixed mishandling of parameters and wrong use of MacroFirstWeekDay and MacroLastWeekDay functions, resulting in wrong values for non first or last week days (e.g. 2nd or 3rd week day).
 - Fixed incorrect parsing of conditional parts in MacroSolver function (e.g. "Sun>=15").
 - Fixed double freeing of internal objects in ParseLine.
-- Increased the maximum allowed length of zone name from 30 to 32 characters.
+- Increased the maximum allowed length of zone name from 30 to 32 characters, to support 'backward' zones.
 - Added TimeZoneExists function to check for existence of a zone.
 - Added ParseDatabaseFromFiles function for loading multiple database files at once by combining them into a single stream.
-- Forbid loading timezone database more than once by throwing an exception, instead of silently corrupting internal data.
-- Added CountZones, CountRules, CountLinks properties.
+- Added CountZones, CountRules, CountLinks, CountTimeZoneNames properties.
 - Do not break official zone names at parsing stage by replacing '_' (underscore) with ' ' (space) in zone names.
 - Major code refactoring and cleanup.
 
