@@ -25,7 +25,6 @@ type
 
   TPascalTZ = class(TObject)
   private
-    FDatabaseLoaded: Boolean;
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
     function FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
@@ -37,7 +36,6 @@ type
     function GetCountZones: Integer;
     function GetCountRules: Integer;
     function GetCountLinks: Integer;
-    procedure CheckCanLoadDatabase;
   protected
     FDetectInvalidLocalTimes: Boolean;
     FLineCounter: integer;
@@ -689,7 +687,6 @@ function TPascalTZ.ParseDatabaseFromFile(const AFileName: String): Boolean;
 var
   FileStream: TFileStream;
 begin
-  CheckCanLoadDatabase;
   FileStream:=TFileStream.Create(AFileName,fmOpenRead or fmShareDenyWrite);
   try
     Result:=ParseDatabaseFromStream(FileStream);
@@ -704,7 +701,6 @@ var
   AFileStream: TFileStream;
   AFileName: String;
 begin
-  CheckCanLoadDatabase;
   ADatabaseStream := TStringStream.Create('');
   try
     for AFileName in AFileNames do
@@ -724,15 +720,6 @@ begin
   end;
 end;
 
-procedure TPascalTZ.CheckCanLoadDatabase;
-begin
-  // TPascalTZ class was not designed to load more than one database file.
-  // Loading more than once messes up evaluation/application of timezones,
-  // so forbid it until this problem is fixed.
-  if FDatabaseLoaded then
-    raise TTZException.Create('Cannot load timezone database, it is already loaded');
-end;
-
 function TPascalTZ.ParseDatabaseFromStream(const AStream: TStream): Boolean;
 var
   Buffer: PChar;
@@ -742,9 +729,8 @@ var
   ThisLine: AsciiString;
   ParseSequence: TParseSequence;
 begin
-  CheckCanLoadDatabase;
-  FDatabaseLoaded := True;
-
+  ParseStatusTAG := '';
+  ParseStatusPreviousZone := '';
   FileSize:=AStream.Size;
   Buffer:=nil;
   GetMem(Buffer,FileSize);
@@ -794,7 +780,6 @@ end;
 constructor TPascalTZ.Create;
 begin
   FDetectInvalidLocalTimes := True;
-  FDatabaseLoaded := False;
   FLinks := TTZLinkList.Create(True); // FreeObjects = True
   FZones := TTZZoneList.Create(True); // FreeObjects = True
   FRules := TTZRuleList.Create(True); // FreeObjects = True
