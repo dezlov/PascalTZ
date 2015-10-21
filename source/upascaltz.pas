@@ -34,7 +34,6 @@ type
     function FindZoneName(const AZone: AsciiString; const AIncludeLinks: Boolean): integer;
     function FindLinkName(const AZoneLinkTo: AsciiString): integer;
     function FindRuleName(const AName: AsciiString): Integer;
-    procedure SortRules;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
     function GetCountLinks: Integer;
@@ -247,43 +246,6 @@ begin
       end;
     end;
   end;
-end;
-
-function SortCompareRule(const Item1, Item2: TTZRule): Integer;
-const
-  eSortCompareBigger = 1;
-  eSortCompareLesser = -1;
-  eSortCompareEqual  = 0;
-begin
-  if Item1.Name>Item2.Name Then begin
-    Exit(eSortCompareBigger);
-  end else if Item1.Name<Item2.Name Then begin
-    Exit(eSortCompareLesser);
-  end;
-  if Item1.FromYear>Item2.FromYear then begin
-    Exit(eSortCompareBigger);
-  end else if Item1.FromYear<Item2.FromYear Then begin
-    Exit(eSortCompareLesser);
-  end;
-  if Item1.ToYear>Item2.ToYear then begin
-    Exit(eSortCompareBigger);
-  end else if Item1.ToYear<Item2.ToYear Then begin
-    Exit(eSortCompareLesser);
-  end;
-  if Item1.InMonth>Item2.InMonth then begin
-    Exit(eSortCompareBigger);
-  end else if Item1.InMonth<Item2.InMonth Then begin
-    Exit(eSortCompareLesser);
-  end;
-  //This should not happend
-//  Raise TTZException.CreateFmt('Invalid rule sorting',[]);
-  Result:=eSortCompareEqual;
-end;
-
-// TODO: Investigate whether SortRules is actually needed for correct operation.
-procedure TPascalTZ.SortRules;
-begin
-  FRules.Sort(@SortCompareRule);
 end;
 
 procedure TPascalTZ.ParseLine(const ALineNumber: Integer;
@@ -820,10 +782,6 @@ begin
         SetLength(ThisLine,LineSize);
         Move(Buffer[LineBegin],ThisLine[1],LineSize);
         ParseLine(FLineCounter, ThisLine, ParseSequence);
-      end;
-      if ParseSequence=TTzParseRule then begin
-        //Sort the rules...
-        SortRules();
       end;
       ParseSequence:=Succ(ParseSequence);
     end;
