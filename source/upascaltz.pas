@@ -29,7 +29,7 @@ type
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
     function FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
-      const ADateTime: TTZDateTime; const AConvertToZone: Boolean): Integer;
+      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): Integer;
     function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
     function FindZoneName(const AZone: AsciiString; const AIncludeLinks: Boolean): integer;
     function FindLinkName(const AZoneLinkTo: AsciiString): integer;
@@ -150,37 +150,68 @@ begin
   end;
 end;
 
-function GetRuleBeginDate(const ARule: TTZRule; const Year, OffsetSecsInDay: Integer): TTZDateTime;
+function GetRuleBeginDate(const AZone: TTzZone; const ARule: TTZRule;
+  const AYear: Integer; const ATargetTimeForm: TTZTimeForm): TTZDateTime;
 begin
-  Result.Year := Year;
+  Result.Year := AYear;
   Result.Month := ARule.InMonth;
   Result.Day := 1;
   MacroSolver(Result, ARule.OnRule);
-  Result.SecsInDay := ARule.AtHourTime + OffsetSecsInDay;
+  Result.SecsInDay := ARule.AtHourTime;
+
+  // Adjust for a target time form
+  case ARule.AtHourTimeForm of
+    tztfUniversal: // UTC
+    begin
+      case ATargetTimeForm of
+        tztfUniversal: // UTC => UTC
+          begin end;
+        tztfWallClock: // UTC => STD+DST
+          Result.SecsInDay := Result.SecsInDay + AZone.Offset + ARule.SaveTime;
+        else
+          raise TTZException.Create('Invalid target time form for rule begin date');
+      end;
+    end;
+    tztfWallClock: // STD+DST
+    begin
+      case ATargetTimeForm of
+        tztfUniversal: // STD+DST => UTC
+          Result.SecsInDay := Result.SecsInDay - AZone.Offset - ARule.SaveTime;
+        tztfWallClock: // STD+DST => STD+DST
+          begin end;
+        else
+          raise TTZException.Create('Invalid target time form for rule begin date');
+      end;
+    end;
+    tztfStandard: // STD
+    begin
+      case ATargetTimeForm of
+        tztfUniversal: // STD => UTC
+          Result.SecsInDay := Result.SecsInDay - AZone.Offset;
+        tztfWallClock: // STD => STD+DST
+          Result.SecsInDay := Result.SecsInDay + ARule.SaveTime;
+        else
+          raise TTZException.Create('Invalid target time form for rule begin date');
+      end;
+    end;
+  end;
+
   FixUpTime(Result);
 end;
 
 function TPascalTZ.FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
-  const ADateTime: TTZDateTime; const AConvertToZone: Boolean): Integer;
+  const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): Integer;
 var
   I: Integer;
   RuleName: AsciiString;
   RuleBeginDate, SelectedRuleBeginDate: TTZDateTime;
-  RuleTimeOffset, ApplyYear: Integer;
+  ApplyYear: Integer;
   SelectRule: Boolean;
 begin
   Result := -1;
 
   // Name of the rule
   RuleName := FRules[RuleIndexStart].Name;
-
-  // Calculate offset for converting UTC time to the timezone of ADateTime value.
-  if AConvertToZone then
-    // When ADateTime is in UTC, no offset is needed.
-    RuleTimeOffset := 0
-  else
-    // When ADateTime in Local Time Zone, apply standard time offset
-    RuleTimeOffset := FZones[ZoneIndex].Offset; // The amount of time to add to UTC to get standard time in this zone.
 
   // Find a rule with the most recent date of activation, prior to ADateTime.
   for I := RuleIndexStart to FRules.Count-1 do
@@ -193,8 +224,8 @@ begin
       ApplyYear := Min(FRules[I].ToYear, ADateTime.Year);
       while (ApplyYear >= FRules[I].FromYear) do
       begin
-        RuleBeginDate := GetRuleBeginDate(FRules[I], ApplyYear, RuleTimeOffset);
-        SelectRule := CompareDates(RuleBeginDate, ADateTime) <= 0; // before ADateTime
+        RuleBeginDate := GetRuleBeginDate(FZones[ZoneIndex], FRules[I], ApplyYear, ATimeForm);
+        SelectRule := CompareDates(RuleBeginDate, ADateTime) <= 0; // before or on ADateTime
         if SelectRule then
           Break;
         Dec(ApplyYear); // try previous year
@@ -573,6 +604,7 @@ var
   ZoneIndex, RuleIndex: Integer;
   SaveTime: integer;
   RuleLetters: AsciiString;
+  TimeForm: TTZTimeForm;
 begin
   //Find zone matching target...
   ZoneIndex:=FindZoneName(AZone, True);
@@ -604,7 +636,11 @@ begin
   //Now we have the valid rule index...
   SaveTime := 0;
   RuleLetters := '';
-  RuleIndex := FindRuleForDate(RuleIndex, ZoneIndex, ADateTime, AConvertToZone);
+  if AConvertToZone then
+    TimeForm := tztfUniversal
+  else
+    TimeForm := tztfWallClock;
+  RuleIndex := FindRuleForDate(RuleIndex, ZoneIndex, ADateTime, TimeForm);
   if RuleIndex >= 0 then
   begin
     SaveTime := FRules[RuleIndex].SaveTime;
