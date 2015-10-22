@@ -27,20 +27,20 @@ type
   private
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
-    function FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
-      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): Integer;
-    function FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
-    function FindZoneName(const AZone: AsciiString; const AIncludeLinks: Boolean): integer;
-    function FindLinkName(const AZoneLinkTo: AsciiString): integer;
-    function FindRuleName(const AName: AsciiString): Integer;
+    function FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
+      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
+    function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
+    function FindZoneGroup(const AZone: AsciiString; const AIncludeLinks: Boolean): TTZZoneGroup;
+    function FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
+    function FindLink(const AZoneLinkTo: AsciiString): TTZLink;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
     function GetCountLinks: Integer;
     function GetCountTimeZoneNames: Integer;
   protected
     FDetectInvalidLocalTimes: Boolean;
-    FRules: TTZRuleList;
-    FZones: TTZZoneList;
+    FRuleGroups: TTZRuleGroupList;
+    FZoneGroups: TTZZoneGroupList;
     FLinks: TTZLinkList;
     procedure ParseLine(const ALineNumber: Integer; const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseLine(const ALine: AsciiString; const AParseSequence: TParseSequence);
@@ -83,68 +83,65 @@ uses
 
 { TPascalTZ }
 
-function TPascalTZ.FindRuleName(const AName: AsciiString): Integer;
+function TPascalTZ.FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
 var
   j: integer;
 begin
-  Result:=-1;
-  for j := 0 to FRules.Count-1 do begin
-    if FRules[j].Name=AName then begin
-      Result:=j;
-      break;
-    end;
-  end;
-end;
-
-function TPascalTZ.FindLinkName(const AZoneLinkTo: AsciiString): integer;
-var
-  j: integer;
-begin
-  Result:=-1;
-  for j := 0 to FLinks.Count-1 do begin
-    if FLinks[j].LinkTo=AZoneLinkTo then begin
-      Result:=j;
+  Result:=nil;
+  for j := 0 to FRuleGroups.Count-1 do begin
+    if FRuleGroups[j].Name=AName then begin
+      Result:=FRuleGroups[j];
       Break;
     end;
   end;
 end;
 
-function TPascalTZ.FindZoneName(const AZone: AsciiString; const AIncludeLinks: Boolean): integer;
+function TPascalTZ.FindLink(const AZoneLinkTo: AsciiString): TTZLink;
 var
-  LinkIndex: Integer;
+  j: integer;
+begin
+  Result:=nil;
+  for j := 0 to FLinks.Count-1 do begin
+    if FLinks[j].LinkTo=AZoneLinkTo then begin
+      Result:=FLinks[j];
+      Break;
+    end;
+  end;
+end;
+
+function TPascalTZ.FindZoneGroup(const AZone: AsciiString; const AIncludeLinks: Boolean): TTZZoneGroup;
+var
+  Link: TTZLink;
   TargetZone: AsciiString;
   j: integer;
 begin
-  Result:=-1;
+  Result:=nil;
   TargetZone := AZone;
   if AIncludeLinks then
   begin
-    LinkIndex := FindLinkName(AZone);
-    if LinkIndex >= 0 then
-      TargetZone := FLinks[LinkIndex].LinkFrom;
+    Link := FindLink(AZone);
+    if Link <> nil then
+      TargetZone := Link.LinkFrom;
   end;
-  for j := 0 to FZones.Count-1 do begin
-    if FZones[j].Name=TargetZone then begin
-      Result:=j;
+  for j := 0 to FZoneGroups.Count-1 do begin
+    if FZoneGroups[j].Name=TargetZone then begin
+      Result:=FZoneGroups[j];
       Break;
     end;
   end;
 end;
 
-function TPascalTZ.FindZoneForDate(const ZoneIndexStart: integer;const ADateTime: TTZDateTime): integer;
+function TPascalTZ.FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
 var
-  AZone: AsciiString;
   j: integer;
 begin
-  AZone:=FZones[ZoneIndexStart].Name;
-  j:=ZoneIndexStart;
-  Result:=-1;
-  while (j<=FZones.Count-1) and (FZones[j].Name=AZone) do begin
-    if CompareDates(FZones[j].RuleValidUntil, ADateTime)=1 then begin
-      Result:=j;
-      break;
+  Result:=nil;
+  for j := 0 to AZoneList.Count - 1 do
+  begin
+    if CompareDates(AZoneList[j].RuleValidUntil, ADateTime) > 0 then begin
+      Result:=AZoneList[j];
+      Break;
     end;
-    inc(j);
   end;
 end;
 
@@ -215,32 +212,25 @@ begin
   FixUpTime(Result);
 end;
 
-function TPascalTZ.FindRuleForDate(const RuleIndexStart, ZoneIndex: Integer;
-  const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): Integer;
+function TPascalTZ.FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
+  const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
 var
-  I: Integer;
-  RuleName: AsciiString;
   RuleBeginDate, SelectedRuleBeginDate: TTZDateTime;
   ApplyYear: Integer;
   SelectRule: Boolean;
+  Rule: TTZRule;
 begin
-  Result := -1;
-
-  // Name of the rule
-  RuleName := FRules[RuleIndexStart].Name;
+  Result := nil;
 
   // Find a rule with the most recent date of activation, prior to ADateTime.
-  for I := RuleIndexStart to FRules.Count-1 do
+  for Rule in ARuleList do
   begin
-    // Skip differently named rules
-    if FRules[I].Name = RuleName then
-    begin
       // Find the most recent date when rule got activated
       SelectRule := False;
-      ApplyYear := Min(FRules[I].ToYear, ADateTime.Year);
-      while (ApplyYear >= FRules[I].FromYear) do
+      ApplyYear := Min(Rule.ToYear, ADateTime.Year);
+      while (ApplyYear >= Rule.FromYear) do
       begin
-        RuleBeginDate := GetRuleBeginDate(FZones[ZoneIndex], FRules[I], ApplyYear, ATimeForm);
+        RuleBeginDate := GetRuleBeginDate(AZone, Rule, ApplyYear, ATimeForm);
         SelectRule := CompareDates(RuleBeginDate, ADateTime) <= 0; // before or on ADateTime
         if SelectRule then
           Break;
@@ -251,17 +241,16 @@ begin
       if SelectRule then
       begin
         // If already have a selected a rule, pick the most recent of two rules
-        if Result >= 0 then
+        if Result <> nil then
           SelectRule := (CompareDates(RuleBeginDate, SelectedRuleBeginDate) >= 0);
 
         // Select the current rule
         if SelectRule then
         begin
-          Result := I;
+          Result := Rule;
           SelectedRuleBeginDate := RuleBeginDate;
         end;
       end;
-    end;
   end;
 end;
 
@@ -335,19 +324,15 @@ end;
 procedure TPascalTZ.BareParseZone(const AIterator: TTZLineIterate;
   const AZone: AsciiString);
 var
-  Index: integer;
   RuleName: AsciiString;
-  RuleTmpIndex: integer;
   TmpWord: AsciiString;
   NewZone: TTZZone;
+  ZoneGroup: TTZZoneGroup;
 begin
   NewZone := TTZZone.Create;
-  Index := FZones.Add(NewZone); // list owns the new item
-
-  begin
+  try
     //First is the zone name
     if Length(AZone)>TZ_ZONENAME_SIZE then begin
-      FZones.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Name on Zone line "%s" too long. (Increase source code TZ_ZONENAME_SIZE)',[AIterator.CurrentLine]);
     end;
     NewZone.Name:=AZone;
@@ -359,7 +344,6 @@ begin
     //Now check the rules...
     RuleName:=AIterator.GetNextWord;
     if RuleName='' Then begin
-      FZones.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Rule on Zone line "%s" empty.',[AIterator.CurrentLine]);
     end;
     if RuleName='-' then begin
@@ -371,9 +355,7 @@ begin
       NewZone.RuleFixedOffset:=TimeToSeconds(RuleName);
       NewZone.RuleName:='';
     end else begin
-      RuleTmpIndex:=FindRuleName(RuleName);
-      if RuleTmpIndex<0 then begin
-        FZones.Delete(Index); //Remove put information
+      if FindRuleGroup(RuleName) = nil then begin
         Raise TTZException.CreateFmt('Rule on Zone line "%s" not found.',[AIterator.CurrentLine]);
       end else begin
         NewZone.RuleName:=RuleName;
@@ -384,7 +366,6 @@ begin
     //Now its time for the format (GMT, BST, ...)
     TmpWord:=AIterator.GetNextWord;
     if Length(TmpWord)>TZ_TIMEZONELETTERS_SIZE Then begin
-      FZones.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Format on Zone line "%s" too long. (Increase source code TZ_TIMEZONELETTERS_SIZE)',[AIterator.CurrentLine]);
     end;
     NewZone.TimeZoneLetters:=TmpWord;
@@ -393,22 +374,33 @@ begin
     //left to right: year month day hour[s]
     //defaults:      YEAR Jan   1   0:00:00
     NewZone.RuleValidUntil:=ParseUntilFields(AIterator,NewZone.RuleValidUntilForm);
+  except
+    FreeAndNil(NewZone);
+    raise;
   end;
+
+  // Add new zone group if needed
+  ZoneGroup := FindZoneGroup(NewZone.Name, False);
+  if ZoneGroup = nil then
+  begin
+    ZoneGroup := TTZZoneGroup.Create(NewZone.Name);
+    FZoneGroups.Add(ZoneGroup); // list owns the new item
+  end;
+
+  // Add new zone definition
+  ZoneGroup.List.Add(NewZone); // list owns the new item
 end;
 
 procedure TPascalTZ.BareParseRule(const AIterator: TTZLineIterate);
 var
-  Index: integer;
   TmpWord: AsciiString;
   NewRule: TTZRule;
+  RuleGroup: TTZRuleGroup;
 begin
   NewRule := TTZRule.Create;
-  Index := FRules.Add(NewRule); // list owns the new item
-
-  begin
+  try
     TmpWord:=AIterator.GetNextWord;
     if Length(TmpWord)>TZ_RULENAME_SIZE then begin
-      FRules.Delete(Index); //Remove put information
       Raise TTZException.CreateFmt('Name on Rule line "%s" too long. (Increase source code TZ_RULENAME_SIZE)',[AIterator.CurrentLine]);
     end;
     NewRule.Name:=TmpWord;
@@ -456,7 +448,21 @@ begin
     NewRule.TimeZoneLetters:=AIterator.GetNextWord;
     if NewRule.TimeZoneLetters='-' Then
       NewRule.TimeZoneLetters:='';
+  except
+    FreeAndNil(NewRule);
+    raise;
   end;
+
+  // Add new rule group if needed
+  RuleGroup := FindRuleGroup(NewRule.Name);
+  if RuleGroup = nil then
+  begin
+    RuleGroup := TTZRuleGroup.Create(NewRule.Name);
+    FRuleGroups.Add(RuleGroup); // list owns the new item
+  end;
+
+  // Add new zone definition
+  RuleGroup.List.Add(NewRule); // list owns the new item
 end;
 
 procedure TPascalTZ.BareParseLink(const AIterator: TTZLineIterate);
@@ -481,7 +487,7 @@ begin
     NewLink.LinkTo := TmpWord;
 
     // Check existance of "FROM" zone
-    if FindZoneName(NewLink.LinkFrom, False) < 0 then
+    if FindZoneGroup(NewLink.LinkFrom, False) = nil then
       raise TTZException.CreateFmt('Zone info not found for link FROM "%s" TO "%s".', [NewLink.LinkFrom, NewLink.LinkTo]);
   except
     FLinks.Delete(Index);
@@ -490,13 +496,21 @@ begin
 end;
 
 function TPascalTZ.GetCountZones: Integer;
+var
+  Group: TTZZoneGroup;
 begin
-  Result := FZones.Count;
+  Result := 0;
+  for Group in FZoneGroups do
+    Inc(Result, Group.List.Count);
 end;
 
 function TPascalTZ.GetCountRules: Integer;
+var
+  Group: TTZRuleGroup;
 begin
-  Result := FRules.Count;
+  Result := 0;
+  for Group in FRuleGroups do
+    Inc(Result, Group.List.Count);
 end;
 
 function TPascalTZ.GetCountLinks: Integer;
@@ -524,9 +538,9 @@ var
   Name: AsciiString;
 begin
   AZones.Clear;
-  for I := 0 to FZones.Count-1 do
+  for I := 0 to FZoneGroups.Count-1 do
   begin
-    Name := FZones[I].Name;
+    Name := FZoneGroups[I].Name;
     if AZones.IndexOf(Name) < 0 then
       AZones.Add(Name);
   end;
@@ -543,7 +557,7 @@ end;
 
 function TPascalTZ.TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
 begin
-  Result := (FindZoneName(AZone, AIncludeLinks) >= 0);
+  Result := (FindZoneGroup(AZone, AIncludeLinks) <> nil);
 end;
 
 function TPascalTZ.ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
@@ -582,34 +596,37 @@ function TPascalTZ.Convert(const ADateTime: TTZDateTime;
   const AZone: String; const AConvertToZone: Boolean;
   out ATimeZoneName: String): TTZDateTime;
 var
-  ZoneIndex, RuleIndex: Integer;
+  Zone: TTZZone;
+  Rule: TTZRule;
+  ZoneGroup: TTZZoneGroup;
+  RuleGroup: TTZRuleGroup;
   SaveTime: integer;
   RuleLetters: AsciiString;
   TimeForm: TTZTimeForm;
 begin
   //Find zone matching target...
-  ZoneIndex:=FindZoneName(AZone, True);
-  if ZoneIndex<0 then begin
+  ZoneGroup:=FindZoneGroup(AZone, True);
+  if ZoneGroup = nil then begin
     raise TTZException.CreateFmt('Zone not found [%s]', [AZone]);
   end;
 
   // Now check which zone configuration line matches the given date.
-  ZoneIndex:=FindZoneForDate(ZoneIndex,ADateTime);
-  if ZoneIndex<0 then begin
+  Zone:=FindZoneForDate(ZoneGroup.List,ADateTime);
+  if Zone = nil then begin
     raise TTZException.CreateFmt('No valid conversion rule for Zone [%s]', [AZone]);
   end;
-  RuleIndex:=-1;
-  if Length(FZones[ZoneIndex].RuleName) > 0 then
-    RuleIndex:=FindRuleName(FZones[ZoneIndex].RuleName);
+  RuleGroup:=nil;
+  if Length(Zone.RuleName) > 0 then
+    RuleGroup:=FindRuleGroup(Zone.RuleName);
 
-  if RuleIndex<0 then begin
+  if RuleGroup = nil then begin
     //No rule is applied, so use the zone fixed offset
     Result:=ADateTime;
     if AConvertToZone then
-      Inc(Result.SecsInDay,FZones[ZoneIndex].RuleFixedOffset+FZones[ZoneIndex].Offset)
+      Inc(Result.SecsInDay,Zone.RuleFixedOffset+Zone.Offset)
     else
-      Dec(Result.SecsInDay,FZones[ZoneIndex].RuleFixedOffset+FZones[ZoneIndex].Offset);
-    ATimeZoneName:=FZones[ZoneIndex].TimeZoneLetters;
+      Dec(Result.SecsInDay,Zone.RuleFixedOffset+Zone.Offset);
+    ATimeZoneName:=Zone.TimeZoneLetters;
     FixUpTime(Result);
     exit;
   end;
@@ -621,18 +638,18 @@ begin
     TimeForm := tztfUniversal
   else
     TimeForm := tztfWallClock;
-  RuleIndex := FindRuleForDate(RuleIndex, ZoneIndex, ADateTime, TimeForm);
-  if RuleIndex >= 0 then
+  Rule := FindRuleForDate(RuleGroup.List, Zone, ADateTime, TimeForm);
+  if Rule <> nil then
   begin
-    SaveTime := FRules[RuleIndex].SaveTime;
-    RuleLetters := FRules[RuleIndex].TimeZoneLetters;
+    SaveTime := Rule.SaveTime;
+    RuleLetters := Rule.TimeZoneLetters;
   end;
 
   Result:=ADateTime;
   if AConvertToZone then
-    Inc(Result.SecsInDay,SaveTime+FZones[ZoneIndex].Offset)
+    Inc(Result.SecsInDay,SaveTime+Zone.Offset)
   else
-    Dec(Result.SecsInDay,SaveTime+FZones[ZoneIndex].Offset);
+    Dec(Result.SecsInDay,SaveTime+Zone.Offset);
   FixUpTime(Result);
 
   if not AConvertToZone then
@@ -642,7 +659,7 @@ begin
     end;
   end;
 
-  ATimeZoneName := FZones[ZoneIndex].TimeZoneLetters;
+  ATimeZoneName := Zone.TimeZoneLetters;
   ATimeZoneName := ResolveTimeZoneAbbreviation(ATimeZoneName, RuleLetters, SaveTime <> 0);
 end;
 
@@ -804,15 +821,15 @@ constructor TPascalTZ.Create;
 begin
   FDetectInvalidLocalTimes := True;
   FLinks := TTZLinkList.Create(True); // FreeObjects = True
-  FZones := TTZZoneList.Create(True); // FreeObjects = True
-  FRules := TTZRuleList.Create(True); // FreeObjects = True
+  FZoneGroups := TTZZoneGroupList.Create(True); // FreeObjects = True
+  FRuleGroups := TTZRuleGroupList.Create(True); // FreeObjects = True
 end;
 
 destructor TPascalTZ.Destroy;
 begin
   FreeAndNil(FLinks);
-  FreeAndNil(FZones);
-  FreeAndNil(FRules);
+  FreeAndNil(FZoneGroups);
+  FreeAndNil(FRuleGroups);
 end;
 
 end.

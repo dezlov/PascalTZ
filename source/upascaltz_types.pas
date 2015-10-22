@@ -75,6 +75,19 @@ end;
 
 TTZRuleList = specialize TFPGObjectList<TTZRule>;
 
+TTZRuleGroup = class
+private
+  FList: TTZRuleList;
+  FName: AsciiString;
+public
+  constructor Create(const AName: AsciiString);
+  destructor Destroy; override;
+  property List: TTZRuleList read FList;
+  property Name: AsciiString read FName write FName;
+end;
+
+TTZRuleGroupList = specialize TFPGObjectList<TTZRuleGroup>;
+
 TTzZone=class
 public
   Name: AsciiString;
@@ -87,6 +100,19 @@ public
 end;
 
 TTZZoneList = specialize TFPGObjectList<TTZZone>;
+
+TTZZoneGroup = class
+private
+  FList: TTZZoneList;
+  FName: AsciiString;
+public
+  constructor Create(const AName: AsciiString);
+  destructor Destroy; override;
+  property List: TTZZoneList read FList;
+  property Name: AsciiString read FName write FName;
+end;
+
+TTZZoneGroupList = specialize TFPGObjectList<TTZZoneGroup>;
 
 TTZLink=class
 public
@@ -122,6 +148,28 @@ implementation
 const
   CHAR_SPACE=#32;
   CHAR_TAB=  #09;
+
+constructor TTZRuleGroup.Create(const AName: AsciiString);
+begin
+  FName := AName;
+  FList := TTZRuleList.Create(True); // FreeObjects = True
+end;
+
+destructor TTZRuleGroup.Destroy;
+begin
+  FreeAndNil(FList);
+end;
+
+constructor TTZZoneGroup.Create(const AName: AsciiString);
+begin
+  FName := AName;
+  FList := TTZZoneList.Create(True); // FreeObjects = True
+end;
+
+destructor TTZZoneGroup.Destroy;
+begin
+  FreeAndNil(FList);
+end;
 
 { TTZLineIterate }
 
