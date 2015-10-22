@@ -161,6 +161,8 @@ begin
       case TargetTimeForm of
         tztfUniversal: // UTC => UTC
           begin end;
+        tztfStandard:  // UTC => STD
+          Result := Result + StandardTimeOffset;
         tztfWallClock: // UTC => STD+DST
           Result := Result + StandardTimeOffset + SaveTimeOffset;
         else
@@ -172,6 +174,8 @@ begin
       case TargetTimeForm of
         tztfUniversal: // STD+DST => UTC
           Result := Result - StandardTimeOffset - SaveTimeOffset;
+        tztfStandard:  // STD+DST => STD
+          Result := Result - SaveTimeOffset;
         tztfWallClock: // STD+DST => STD+DST
           begin end;
         else
@@ -183,6 +187,8 @@ begin
       case TargetTimeForm of
         tztfUniversal: // STD => UTC
           Result := Result - StandardTimeOffset;
+        tztfStandard:  // STD => STD
+          begin end;
         tztfWallClock: // STD => STD+DST
           Result := Result + SaveTimeOffset;
         else
