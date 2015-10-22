@@ -70,6 +70,7 @@ type
     procedure ParseDatabaseFromFiles(const AFileNames: array of String);
     procedure ParseDatabaseFromStream(const AStream: TStream);
     procedure ParseDatabaseFromMemory(const AData: Pointer; const ADataSize: Integer);
+    procedure ClearDatabase;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -734,6 +735,13 @@ begin
     end;
     ParseSequence:=Succ(ParseSequence);
   end;
+end;
+
+procedure TPascalTZ.ClearDatabase;
+begin
+  FLinks.Clear;
+  FZoneGroups.Clear;
+  FRuleGroups.Clear;
 end;
 
 constructor TPascalTZ.Create;
