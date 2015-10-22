@@ -44,6 +44,10 @@ function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
 function TimeToSeconds(const ATime: AsciiString): integer;
 function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
+function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
+  const IsDST: Boolean): AsciiString;
+function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTimeOffset: Integer;
+  const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
 
 const
   TTZMonthDaysCount:
@@ -55,6 +59,85 @@ implementation
 
 uses
   DateUtils;
+
+function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTimeOffset: Integer;
+  const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
+var
+  InvalidTimeForms: Boolean;
+begin
+  Result := SourceSecondsInDay;
+  InvalidTimeForms := False;
+  case SourceTimeForm of
+    tztfUniversal: // UTC
+    begin
+      case TargetTimeForm of
+        tztfUniversal: // UTC => UTC
+          begin end;
+        tztfStandard:  // UTC => STD
+          Result := Result + StandardTimeOffset;
+        tztfWallClock: // UTC => STD+DST
+          Result := Result + StandardTimeOffset + SaveTimeOffset;
+        else
+          InvalidTimeForms := True;
+      end;
+    end;
+    tztfWallClock: // STD+DST
+    begin
+      case TargetTimeForm of
+        tztfUniversal: // STD+DST => UTC
+          Result := Result - StandardTimeOffset - SaveTimeOffset;
+        tztfStandard:  // STD+DST => STD
+          Result := Result - SaveTimeOffset;
+        tztfWallClock: // STD+DST => STD+DST
+          begin end;
+        else
+          InvalidTimeForms := True;
+      end;
+    end;
+    tztfStandard: // STD
+    begin
+      case TargetTimeForm of
+        tztfUniversal: // STD => UTC
+          Result := Result - StandardTimeOffset;
+        tztfStandard:  // STD => STD
+          begin end;
+        tztfWallClock: // STD => STD+DST
+          Result := Result + SaveTimeOffset;
+        else
+          InvalidTimeForms := True;
+      end;
+    end;
+    else
+      InvalidTimeForms := True;
+  end;
+  if InvalidTimeForms then
+    raise TTZException.CreateFmt('Invalid time form conversion from "%d" to "%d".',
+      [Ord(SourceTimeForm), Ord(TargetTimeForm)]);
+end;
+
+function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
+  const IsDST: Boolean): AsciiString;
+var
+  ZoneNameCut: integer;
+begin
+  Result := AZoneLetters;
+
+  // Placeholders "%s" in time zone abbreviations seem to be documented as lower case,
+  // but use rfIgnoreCase flag in StringReplace just to be safe.
+  Result := StringReplace(Result, '%s', ARuleLetters, [rfReplaceAll, rfIgnoreCase]);
+
+  // When timezonename is XXX/YYY, XXX is no daylight and YYY is daylight saving.
+  ZoneNameCut:=Pos('/',Result);
+  if ZoneNameCut>0 then
+  begin
+    if not IsDST then
+      // Use the XXX
+      Result:=Copy(Result,1,ZoneNameCut-1)
+    else
+      // Use the YYY
+      Result:=Copy(Result,ZoneNameCut+1,Length(Result)-ZoneNameCut);
+  end;
+end;
 
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
 begin
