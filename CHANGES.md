@@ -4,6 +4,8 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+- Added ClearDatabase method.
+- Significant speedup in performing time zone conversions due to smart storage of zones and rules (grouped by their name).
 - Removed unused return value from all ParseDatabaseFromXXX functions.
 - Added ParseDatabaseFromMemory function.
 - Removed AOnlyGeoZones parameter from GetTimeZoneNames function, as it is inaccurate and infeasible.
