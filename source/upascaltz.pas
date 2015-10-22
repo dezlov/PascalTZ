@@ -148,6 +148,55 @@ begin
   end;
 end;
 
+function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTimeOffset: Integer;
+  const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
+var
+  InvalidTimeForms: Boolean;
+begin
+  Result := SourceSecondsInDay;
+  InvalidTimeForms := False;
+  case SourceTimeForm of
+    tztfUniversal: // UTC
+    begin
+      case TargetTimeForm of
+        tztfUniversal: // UTC => UTC
+          begin end;
+        tztfWallClock: // UTC => STD+DST
+          Result := Result + StandardTimeOffset + SaveTimeOffset;
+        else
+          InvalidTimeForms := True;
+      end;
+    end;
+    tztfWallClock: // STD+DST
+    begin
+      case TargetTimeForm of
+        tztfUniversal: // STD+DST => UTC
+          Result := Result - StandardTimeOffset - SaveTimeOffset;
+        tztfWallClock: // STD+DST => STD+DST
+          begin end;
+        else
+          InvalidTimeForms := True;
+      end;
+    end;
+    tztfStandard: // STD
+    begin
+      case TargetTimeForm of
+        tztfUniversal: // STD => UTC
+          Result := Result - StandardTimeOffset;
+        tztfWallClock: // STD => STD+DST
+          Result := Result + SaveTimeOffset;
+        else
+          InvalidTimeForms := True;
+      end;
+    end;
+    else
+      InvalidTimeForms := True;
+  end;
+  if InvalidTimeForms then
+    raise TTZException.CreateFmt('Invalid time form conversion from "%d" to "%d".',
+      [Ord(SourceTimeForm), Ord(TargetTimeForm)]);
+end;
+
 function GetRuleBeginDate(const AZone: TTzZone; const ARule: TTZRule;
   const AYear: Integer; const ATargetTimeForm: TTZTimeForm): TTZDateTime;
 begin
@@ -155,45 +204,8 @@ begin
   Result.Month := ARule.InMonth;
   Result.Day := 1;
   MacroSolver(Result, ARule.OnRule);
-  Result.SecsInDay := ARule.AtHourTime;
-
-  // Adjust for a target time form
-  case ARule.AtHourTimeForm of
-    tztfUniversal: // UTC
-    begin
-      case ATargetTimeForm of
-        tztfUniversal: // UTC => UTC
-          begin end;
-        tztfWallClock: // UTC => STD+DST
-          Result.SecsInDay := Result.SecsInDay + AZone.Offset + ARule.SaveTime;
-        else
-          raise TTZException.Create('Invalid target time form for rule begin date');
-      end;
-    end;
-    tztfWallClock: // STD+DST
-    begin
-      case ATargetTimeForm of
-        tztfUniversal: // STD+DST => UTC
-          Result.SecsInDay := Result.SecsInDay - AZone.Offset - ARule.SaveTime;
-        tztfWallClock: // STD+DST => STD+DST
-          begin end;
-        else
-          raise TTZException.Create('Invalid target time form for rule begin date');
-      end;
-    end;
-    tztfStandard: // STD
-    begin
-      case ATargetTimeForm of
-        tztfUniversal: // STD => UTC
-          Result.SecsInDay := Result.SecsInDay - AZone.Offset;
-        tztfWallClock: // STD => STD+DST
-          Result.SecsInDay := Result.SecsInDay + ARule.SaveTime;
-        else
-          raise TTZException.Create('Invalid target time form for rule begin date');
-      end;
-    end;
-  end;
-
+  Result.SecsInDay := ConvertToTimeForm(ARule.AtHourTime,
+    AZone.Offset, ARule.SaveTime, ARule.AtHourTimeForm, ATargetTimeForm);
   FixUpTime(Result);
 end;
 
