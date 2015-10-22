@@ -48,6 +48,8 @@ function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiStri
   const IsDST: Boolean): AsciiString;
 function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTimeOffset: Integer;
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
+function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
+  out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
 
 const
   TTZMonthDaysCount:
@@ -59,6 +61,26 @@ implementation
 
 uses
   DateUtils;
+
+function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
+  out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
+begin
+  Result := True;
+  case ConvertDirection of
+    tzcdUniversalToLocal:
+      begin
+        SourceTimeForm := tztfUniversal;
+        TargetTimeForm := tztfWallClock;
+      end;
+    tzcdLocalToUniversal:
+      begin
+        SourceTimeForm := tztfWallClock;
+        TargetTimeForm := tztfUniversal;
+      end;
+    else
+      Result := False;
+  end;
+end;
 
 function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTimeOffset: Integer;
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
