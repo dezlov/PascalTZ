@@ -27,6 +27,10 @@ type
   private
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
+    FDetectInvalidLocalTimes: Boolean;
+    FRuleGroups: TTZRuleGroupList;
+    FZoneGroups: TTZZoneGroupList;
+    FLinks: TTZLinkList;
     function FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
       const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
     function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
@@ -37,11 +41,6 @@ type
     function GetCountRules: Integer;
     function GetCountLinks: Integer;
     function GetCountTimeZoneNames: Integer;
-  protected
-    FDetectInvalidLocalTimes: Boolean;
-    FRuleGroups: TTZRuleGroupList;
-    FZoneGroups: TTZZoneGroupList;
-    FLinks: TTZLinkList;
     procedure ParseLine(const ALineNumber: Integer; const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseLine(const ALine: AsciiString; const AParseSequence: TParseSequence);
     procedure BareParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
