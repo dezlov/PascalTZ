@@ -68,6 +68,7 @@ type
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneAbbreviation: String): TDateTime; overload;
     procedure ParseDatabaseFromFile(const AFileName: String);
     procedure ParseDatabaseFromFiles(const AFileNames: array of String);
+    procedure ParseDatabaseFromString(const AString: String);
     procedure ParseDatabaseFromStream(const AStream: TStream);
     procedure ParseDatabaseFromMemory(const AData: Pointer; const ADataSize: Integer);
     procedure ClearDatabase;
@@ -671,6 +672,18 @@ begin
     ParseDatabaseFromStream(ADatabaseStream);
   finally
     ADatabaseStream.Free;
+  end;
+end;
+
+procedure TPascalTZ.ParseDatabaseFromString(const AString: String);
+var
+  AStream: TStringStream;
+begin
+  AStream := TStringStream.Create(AString);
+  try
+    ParseDatabaseFromStream(AStream);
+  finally
+    AStream.Free;
   end;
 end;
 
