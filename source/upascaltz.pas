@@ -47,8 +47,6 @@ type
     procedure BareParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
     procedure BareParseRule(const AIterator: TTZLineIterate);
     procedure BareParseLink(const AIterator: TTZLineIterate);
-    function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
-    function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String;out ATimeZoneName: String): TTZDateTime;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
       const AConvertDirection: TTZConvertDirection): TTZDateTime; overload;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
@@ -61,8 +59,10 @@ type
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStrings; const AIncludeLinks: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
+    function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String; out ATimeZoneAbbreviation: String): TTZDateTime;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime; overload;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String; out ATimeZoneAbbreviation: String): TDateTime; overload;
+    function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
     function LocalTimeToGMT(const ADateTime: TDateTime; const AFromZone: String): TDateTime;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime; overload;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneAbbreviation: String): TDateTime; overload;
@@ -598,9 +598,9 @@ begin
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TTZDateTime;
-  const AToZone: String; out ATimeZoneName: String): TTZDateTime;
+  const AToZone: String; out ATimeZoneAbbreviation: String): TTZDateTime;
 begin
-  Result := Convert(ADateTime, AToZone, tzcdUniversalToLocal, ATimeZoneName);
+  Result := Convert(ADateTime, AToZone, tzcdUniversalToLocal, ATimeZoneAbbreviation);
 end;
 
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TDateTime;
