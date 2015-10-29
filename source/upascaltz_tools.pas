@@ -51,6 +51,8 @@ function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiStri
   const IsDST: Boolean): AsciiString;
 function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTimeOffset: Integer;
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
+function ConvertToTimeForm(const SourceDateTime: TTZDateTime; const StandardTimeOffset, SaveTimeOffset: Integer;
+  const SourceTimeForm, TargetTimeForm: TTZTimeForm): TTZDateTime;
 function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
   out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
 
@@ -175,6 +177,16 @@ begin
   if InvalidTimeForms then
     raise TTZException.CreateFmt('Invalid time form conversion from "%d" to "%d".',
       [Ord(SourceTimeForm), Ord(TargetTimeForm)]);
+end;
+
+function ConvertToTimeForm(const SourceDateTime: TTZDateTime;
+  const StandardTimeOffset, SaveTimeOffset: Integer;
+  const SourceTimeForm, TargetTimeForm: TTZTimeForm): TTZDateTime;
+begin
+  Result := SourceDateTime;
+  Result.SecsInDay := ConvertToTimeForm(Result.SecsInDay,
+    StandardTimeOffset, SaveTimeOffset, SourceTimeForm, TargetTimeForm);
+  FixUpTime(Result);
 end;
 
 function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
