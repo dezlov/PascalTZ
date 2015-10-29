@@ -21,12 +21,15 @@ uses
   SysUtils, uPascalTZ_Types;
 
 procedure FixUpTime(var ADate: TTZDateTime);
+function IncSeconds(const ADate: TTZDateTime; const ASeconds: Integer): TTZDateTime;
 function IncDays(const ADate: TTZDateTime; const ADays: Integer): TTZDateTime;
 procedure DateTimeToTime(const ADate: TTZDateTime; out AHour,AMinute,ASecond: BYTE);
 function DateTimeToStr(const ADate: TTZDateTime): String;
 function TZDateToPascalDate(const ADate: TTZDateTime): TDateTime;
 function PascalDateToTZDate(const ADate: TDateTime): TTZDateTime;
 function MonthNumberFromShortName(const AMonth: AsciiString): TTZMonth;
+function MinDate(const ADate, BDate: TTZDateTime): TTZDateTime;
+function MaxDate(const ADate, BDate: TTZDateTime): TTZDateTime;
 function CompareDates(const ADate,BDate: TTZDateTime): integer;
 function IsGregorianLeap(const ADate: TTZDateTime): Boolean;
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
@@ -255,6 +258,22 @@ begin
   AMinute:=Temp div 60;
   Dec(Temp,AMinute*60);
   ASecond:=Temp;
+end;
+
+function MinDate(const ADate, BDate: TTZDateTime): TTZDateTime;
+begin
+  if ADate < BDate then
+    Result := ADate
+  else
+    Result := BDate;
+end;
+
+function MaxDate(const ADate, BDate: TTZDateTime): TTZDateTime;
+begin
+  if ADate > BDate then
+    Result := ADate
+  else
+    Result := BDate;
 end;
 
 function CompareDates(const ADate, BDate: TTZDateTime): integer;
@@ -663,6 +682,13 @@ var
 begin
   DateTimeToTime(ADate,H,M,S);
   Result:=format('%.4d.%.2d.%.2d %.2d:%.2d:%.2d',[ADate.Year,ADate.Month,ADate.Day,H,M,S]);
+end;
+
+function IncSeconds(const ADate: TTZDateTime; const ASeconds: Integer): TTZDateTime;
+begin
+  Result := ADate;
+  Inc(Result.SecsInDay, ASeconds);
+  FixUpTime(Result);
 end;
 
 function IncDays(const ADate: TTZDateTime; const ADays: Integer): TTZDateTime;
