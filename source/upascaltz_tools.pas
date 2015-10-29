@@ -51,6 +51,13 @@ function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTim
 function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
   out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
 
+operator < (const ADate, BDate: TTZDateTime): Boolean;
+operator > (const ADate, BDate: TTZDateTime): Boolean;
+operator = (const ADate, BDate: TTZDateTime): Boolean;
+operator <> (const ADate, BDate: TTZDateTime): Boolean;
+operator >= (const ADate, BDate: TTZDateTime): Boolean;
+operator <= (const ADate, BDate: TTZDateTime): Boolean;
+
 const
   TTZMonthDaysCount:
             array [TTZMonth] of TTZDay=(31,28,31,30,31,30,31,31,30,31,30,31);
@@ -61,6 +68,36 @@ implementation
 
 uses
   DateUtils;
+
+operator < (const ADate, BDate: TTZDateTime): Boolean;
+begin
+  Result := CompareDates(ADate, BDate) < 0;
+end;
+
+operator > (const ADate, BDate: TTZDateTime): Boolean;
+begin
+  Result := CompareDates(ADate, BDate) > 0;
+end;
+
+operator = (const ADate, BDate: TTZDateTime): Boolean;
+begin
+  Result := CompareDates(ADate, BDate) = 0;
+end;
+
+operator <> (const ADate, BDate: TTZDateTime): Boolean;
+begin
+  Result := CompareDates(ADate, BDate) <> 0;
+end;
+
+operator >= (const ADate, BDate: TTZDateTime): Boolean;
+begin
+  Result := CompareDates(ADate, BDate) >= 0;
+end;
+
+operator <= (const ADate, BDate: TTZDateTime): Boolean;
+begin
+  Result := CompareDates(ADate, BDate) <= 0;
+end;
 
 function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
   out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
