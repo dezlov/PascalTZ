@@ -563,11 +563,9 @@ begin
 
   if RuleGroup = nil then begin
     //No rule is applied, so use the zone fixed offset
-    Result:=ADateTime;
-    Result.SecsInDay := ConvertToTimeForm(Result.SecsInDay,
+    Result := ConvertToTimeForm(ADateTime,
       Zone.Offset, Zone.RuleFixedOffset, SourceTimeForm, TargetTimeForm);
     ATimeZoneAbbreviation:=Zone.TimeZoneLetters;
-    FixUpTime(Result);
     exit;
   end;
 
@@ -581,10 +579,8 @@ begin
     RuleLetters := Rule.TimeZoneLetters;
   end;
 
-  Result:=ADateTime;
-  Result.SecsInDay := ConvertToTimeForm(Result.SecsInDay,
+  Result := ConvertToTimeForm(ADateTime,
     Zone.Offset, SaveTime, SourceTimeForm, TargetTimeForm);
-  FixUpTime(Result);
 
   if FDetectInvalidLocalTimes and (AConvertDirection = tzcdLocalToUniversal) then
     if CompareDates(ADateTime,Convert(Result,AZone,tzcdUniversalToLocal))<>0 then
