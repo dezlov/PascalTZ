@@ -89,6 +89,20 @@ end;
 
 TTZRuleGroupList = specialize TFPGObjectList<TTZRuleGroup>;
 
+TTZRuleDate=class
+public
+  Date: TTZDateTime;
+  Rule: TTZRule;
+  constructor Create(const ARule: TTZRule; const ADate: TTZDateTime);
+end;
+
+TTZRuleDateList = specialize TFPGObjectList<TTZRuleDate>;
+
+TTZRuleDateStack = class(TTZRuleDateList)
+public
+  procedure SortByDate;
+end;
+
 TTzZone=class
 public
   Name: AsciiString;
@@ -146,6 +160,9 @@ TTZException = class(Exception);
 
 implementation
 
+uses
+  uPascalTZ_Tools;
+
 const
   CHAR_SPACE=#32;
   CHAR_TAB=  #09;
@@ -170,6 +187,22 @@ end;
 destructor TTZZoneGroup.Destroy;
 begin
   FreeAndNil(FList);
+end;
+
+constructor TTZRuleDate.Create(const ARule: TTZRule; const ADate: TTZDateTime);
+begin
+  Self.Rule := ARule;
+  Self.Date := ADate;
+end;
+
+function CompareRuleDate(const RuleDateA, RuleDateB: TTZRuleDate): Integer;
+begin
+  Result := CompareDates(RuleDateA.Date, RuleDateB.Date);
+end;
+
+procedure TTZRuleDateStack.SortByDate;
+begin
+  Self.Sort(@CompareRuleDate);
 end;
 
 { TTZLineIterate }

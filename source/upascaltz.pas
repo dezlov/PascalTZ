@@ -144,57 +144,71 @@ begin
   end;
 end;
 
-function GetRuleBeginDate(const AZone: TTzZone; const ARule: TTZRule;
-  const AYear: Integer; const ATargetTimeForm: TTZTimeForm): TTZDateTime;
+function GetRuleBeginDate(const ARule: TTZRule; const AYear: Integer): TTZDateTime;
 begin
   Result.Year := AYear;
   Result.Month := ARule.InMonth;
   Result.Day := 1;
+  Result.SecsInDay := 0;
   MacroSolver(Result, ARule.OnRule);
-  Result.SecsInDay := ConvertToTimeForm(ARule.AtHourTime,
-    AZone.Offset, ARule.SaveTime, ARule.AtHourTimeForm, ATargetTimeForm);
-  FixUpTime(Result);
+  Result.SecsInDay := ARule.AtHourTime;
 end;
 
 function TPascalTZ.FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
   const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
 var
-  RuleBeginDate, SelectedRuleBeginDate: TTZDateTime;
-  ApplyYear: Integer;
-  SelectRule: Boolean;
+  TargetDatePreviousSaveUTC: TTZDateTime;
+  RuleBeginPreviousSaveUTC: TTZDateTime;
+  ApplyYear, ApplyYearMax, ApplyYearMin: Integer;
   Rule: TTZRule;
+  RuleDate: TTZRuleDate;
+  RuleDateStack: TTZRuleDateStack;
+  PreviousSaveTimeOffset: Integer;
+  IsApplicableRule: Boolean;
 begin
   Result := nil;
-
-  // Find a rule with the most recent date of activation, prior to ADateTime.
-  for Rule in ARuleList do
-  begin
-      // Find the most recent date when rule got activated
-      SelectRule := False;
-      ApplyYear := Min(Rule.ToYear, ADateTime.Year);
-      while (ApplyYear >= Rule.FromYear) do
+  RuleDateStack := TTZRuleDateStack.Create(True); // FreeObjects = True
+  try
+    // Generate rule activation dates for the most recent and previous year.
+    for Rule in ARuleList do
+    begin
+      ApplyYearMax := Min(ADateTime.Year, Rule.ToYear); // current year (bound to rule last year)
+      ApplyYearMin := Max(ApplyYearMax - 1, Rule.FromYear); // previous year (bound to rule first year)
+      for ApplyYear := ApplyYearMin to ApplyYearMax do
       begin
-        RuleBeginDate := GetRuleBeginDate(AZone, Rule, ApplyYear, ATimeForm);
-        SelectRule := CompareDates(RuleBeginDate, ADateTime) <= 0; // before or on ADateTime
-        if SelectRule then
-          Break;
-        Dec(ApplyYear); // try previous year
+        RuleDate := TTZRuleDate.Create(Rule, GetRuleBeginDate(Rule, ApplyYear));
+        RuleDateStack.Add(RuleDate); // list owns the new item
       end;
+    end;
 
-      // Update the currently selected rule
-      if SelectRule then
-      begin
-        // If already have a selected a rule, pick the most recent of two rules
-        if Result <> nil then
-          SelectRule := (CompareDates(RuleBeginDate, SelectedRuleBeginDate) >= 0);
+    // Sort by rule activation date in ascending order.
+    RuleDateStack.SortByDate;
 
-        // Select the current rule
-        if SelectRule then
-        begin
-          Result := Rule;
-          SelectedRuleBeginDate := RuleBeginDate;
-        end;
-      end;
+    // Select the most recently activated rule by comparing target date
+    // and rule begin date in UTC forms using previous save time offset.
+    // When rule activation time is defined in wall clock form, it is by
+    // design a wall clock time at a moment when previous rule was active.
+    // Convert both dates to UTC and use the same save time offset (of previous rule)
+    // to have a consistent and transparent operation. Other time zone libraries
+    // (e.g. PHP, Howard Hinnant TZ) seem to be using a similar approach.
+    PreviousSaveTimeOffset := 0;
+    for RuleDate in RuleDateStack do
+    begin
+      TargetDatePreviousSaveUTC := ConvertToTimeForm(ADateTime,
+        AZone.Offset, PreviousSaveTimeOffset, // use previous save time
+        ATimeForm, tztfUniversal);
+      RuleBeginPreviousSaveUTC := ConvertToTimeForm(RuleDate.Date,
+        AZone.Offset, PreviousSaveTimeOffset, // use previous save time
+        RuleDate.Rule.AtHourTimeForm, tztfUniversal);
+
+      IsApplicableRule := (RuleBeginPreviousSaveUTC <= TargetDatePreviousSaveUTC);
+      if IsApplicableRule then
+        Result := RuleDate.Rule;
+
+      PreviousSaveTimeOffset := RuleDate.Rule.SaveTime;
+    end;
+  finally
+    RuleDateStack.Free;
   end;
 end;
 
