@@ -44,6 +44,7 @@ function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
 function IsLeapYear(const AYear: integer): Boolean;
 function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
 function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
+function SecondsToTime(const ASeconds: Integer): String;
 function TimeToSeconds(const ATime: AsciiString): integer;
 function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
@@ -55,6 +56,7 @@ function ConvertToTimeForm(const SourceDateTime: TTZDateTime; const StandardTime
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): TTZDateTime;
 function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
   out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
+function TimeFormToStr(const ATimeForm: TTZTimeForm): String;
 
 operator < (const ADate, BDate: TTZDateTime): Boolean;
 operator > (const ADate, BDate: TTZDateTime): Boolean;
@@ -102,6 +104,16 @@ end;
 operator <= (const ADate, BDate: TTZDateTime): Boolean;
 begin
   Result := CompareDates(ADate, BDate) <= 0;
+end;
+
+function TimeFormToStr(const ATimeForm: TTZTimeForm): String;
+begin
+  case ATimeForm of
+    tztfWallClock: Result := 'W';
+    tztfStandard:  Result := 'S';
+    tztfUniversal: Result := 'U';
+    else           Result := '?';
+  end;
 end;
 
 function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
@@ -559,6 +571,28 @@ begin
       Raise TTZException.Create('Macro expansion not possible: Unrecognised macro');
     end;
   end;
+end;
+
+function SecondsToTime(const ASeconds: Integer): String;
+var
+  H, M, S: Integer;  // Hours, Minutes, Seconds
+begin
+  S := Abs(ASeconds);
+  H := S div 3600;
+  Dec(S, H * 3600);
+  M := S div 60;
+  Dec(S, M * 60);
+  Result := IntToStr(S);
+  if S < 10 then
+    Result := '0' + Result;
+  Result := IntToStr(M) + ':' + Result;
+  if M < 10 then
+    Result := '0' + Result;
+  Result := IntToStr(H) + ':' + Result;
+  if H < 10 then
+    Result := '0' + Result;
+  if ASeconds < 0 then
+    Result := '-' + Result;
 end;
 
 function TimeToSeconds(const ATime: AsciiString): integer;
