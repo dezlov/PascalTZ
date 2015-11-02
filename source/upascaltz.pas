@@ -36,7 +36,7 @@ type
     function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
     function FindZoneGroup(const AZone: AsciiString; const AIncludeLinks: Boolean): TTZZoneGroup;
     function FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
-    function FindLink(const AZoneLinkTo: AsciiString): TTZLink;
+    function FindLink(const ALinkName: AsciiString): TTZLink;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
     function GetCountLinks: Integer;
@@ -95,13 +95,13 @@ begin
   end;
 end;
 
-function TPascalTZ.FindLink(const AZoneLinkTo: AsciiString): TTZLink;
+function TPascalTZ.FindLink(const ALinkName: AsciiString): TTZLink;
 var
   j: integer;
 begin
   Result:=nil;
   for j := 0 to FLinks.Count-1 do begin
-    if FLinks[j].LinkTo=AZoneLinkTo then begin
+    if FLinks[j].LinkName=ALinkName then begin
       Result:=FLinks[j];
       Break;
     end;
@@ -120,7 +120,7 @@ begin
   begin
     Link := FindLink(AZone);
     if Link <> nil then
-      TargetZone := Link.LinkFrom;
+      TargetZone := Link.LinkTarget;
   end;
   for j := 0 to FZoneGroups.Count-1 do begin
     if FZoneGroups[j].Name=TargetZone then begin
@@ -432,21 +432,21 @@ begin
   NewLink := TTZLink.Create;
   Index := FLinks.Add(NewLink); // list owns the new item
   try
-    // "FROM" zone
+    // "FROM" zone (link target)
     TmpWord := AIterator.GetNextWord;
     if Length(TmpWord) > TZ_ZONENAME_SIZE then
       raise TTZException.CreateFmt('Zone link FROM name "%s" is too long. (Increase source code TZ_ZONENAME_SIZE)', [TmpWord]);
-    NewLink.LinkFrom := TmpWord;
+    NewLink.LinkTarget := TmpWord;
 
-    // "TO" zone
+    // "TO" zone (link name)
     TmpWord := AIterator.GetNextWord;
     if Length(TmpWord) > TZ_ZONENAME_SIZE then
       raise TTZException.CreateFmt('Zone link TO name "%s" is too long. (Increase source code TZ_ZONENAME_SIZE)', [TmpWord]);
-    NewLink.LinkTo := TmpWord;
+    NewLink.LinkName := TmpWord;
 
     // Check existance of "FROM" zone
-    if FindZoneGroup(NewLink.LinkFrom, False) = nil then
-      raise TTZException.CreateFmt('Zone info not found for link FROM "%s" TO "%s".', [NewLink.LinkFrom, NewLink.LinkTo]);
+    if FindZoneGroup(NewLink.LinkTarget, False) = nil then
+      raise TTZException.CreateFmt('Zone info not found for link FROM "%s" TO "%s".', [NewLink.LinkTarget, NewLink.LinkName]);
   except
     FLinks.Delete(Index);
     raise;
@@ -506,7 +506,7 @@ begin
   begin
     for I := 0 to FLinks.Count-1 do
     begin
-      Name := FLinks[I].LinkTo;
+      Name := FLinks[I].LinkName;
       if AZones.IndexOf(Name) < 0 then
         AZones.Add(Name);
     end;

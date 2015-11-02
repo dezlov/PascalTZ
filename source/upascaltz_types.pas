@@ -131,8 +131,8 @@ TTZZoneGroupList = specialize TFPGObjectList<TTZZoneGroup>;
 
 TTZLink=class
 public
-  LinkFrom: AsciiString; // existing zone name
-  LinkTo: AsciiString; // alternative zone name
+  LinkTarget: AsciiString; // existing zone name
+  LinkName: AsciiString; // alternative zone name
 end;
 
 TTZLinkList = specialize TFPGObjectList<TTZLink>;
