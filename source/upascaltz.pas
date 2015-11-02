@@ -146,10 +146,7 @@ end;
 
 function GetRuleBeginDate(const ARule: TTZRule; const AYear: Integer): TTZDateTime;
 begin
-  Result.Year := AYear;
-  Result.Month := ARule.InMonth;
-  Result.Day := 1;
-  Result.SecsInDay := 0;
+  Result := MakeTZDate(AYear, ARule.InMonth, 1, 0);
   MacroSolver(Result, ARule.OnRule);
   Result.SecsInDay := ARule.AtHourTime;
 end;

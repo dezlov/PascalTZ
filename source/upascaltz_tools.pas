@@ -27,6 +27,7 @@ procedure DateTimeToTime(const ADate: TTZDateTime; out AHour,AMinute,ASecond: BY
 function DateTimeToStr(const ADate: TTZDateTime): String;
 function TZDateToPascalDate(const ADate: TTZDateTime): TDateTime;
 function PascalDateToTZDate(const ADate: TDateTime): TTZDateTime;
+function MakeTZDate(const Year, Month, Day, SecsInDay: Integer): TTZDateTime; inline;
 function MonthNumberFromShortName(const AMonth: AsciiString): TTZMonth;
 function MinDate(const ADate, BDate: TTZDateTime): TTZDateTime;
 function MaxDate(const ADate, BDate: TTZDateTime): TTZDateTime;
@@ -454,13 +455,9 @@ var
   TmpWord: AsciiString;
 begin
   //Default Values...
-  with Result do begin
-    Year:=TZ_YEAR_MAX;
-    Month:=1;
-    Day:=1;
-    SecsInDay:=0;
-  end;
+  Result := MakeTZDate(TZ_YEAR_MAX, 1, 1, 0);
   ATimeForm:=ADefaultTimeForm;
+
   TmpWord:=AIterator.GetNextWord;
   if TmpWord='' Then Exit;
   try
@@ -752,6 +749,14 @@ begin
   Result.Month:=MonthOf(ADate);
   Result.Day:=DayOf(ADate);
   Result.SecsInDay:=HourOf(ADate)*3600+MinuteOf(ADate)*60+SecondOf(ADate);
+end;
+
+function MakeTZDate(const Year, Month, Day, SecsInDay: Integer): TTZDateTime; inline;
+begin
+  Result.Year := Year;
+  Result.Month := Month;
+  Result.Day := Day;
+  Result.SecsInDay := SecsInDay;
 end;
 
 //******************************************************************************
