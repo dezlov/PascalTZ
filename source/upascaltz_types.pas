@@ -163,9 +163,6 @@ implementation
 uses
   uPascalTZ_Tools;
 
-const
-  CHAR_SPACE=#32;
-  CHAR_TAB=  #09;
 
 function TTZRule.GetBeginDate(const AYear: Integer): TTZDateTime;
 begin
@@ -215,23 +212,27 @@ end;
 { TTZLineIterate }
 
 function TTZLineIterate.GetNextWord: AsciiString;
+const
+  CHAR_SPACE = #32;
+  CHAR_TAB   = #09;
 var
   BeginPos: integer;
 begin
-  if (FIterateChar=CHAR_SPACE) or (FIterateChar=CHAR_TAB) then begin
-    while (Position<=LineSize) and ((Line[Position]=CHAR_SPACE) or (Line[Position]=CHAR_TAB)) do begin
+  if (FIterateChar=CHAR_SPACE) or (FIterateChar=CHAR_TAB) then
+  begin
+    while (Position<=LineSize) and ((Line[Position]=CHAR_SPACE) or (Line[Position]=CHAR_TAB)) do
       inc(Position);
-    end;
     BeginPos:=Position;
-    while (Position<=LineSize) and ((Line[Position]<>CHAR_SPACE) and (Line[Position]<>CHAR_TAB)) do begin
+    while (Position<=LineSize) and ((Line[Position]<>CHAR_SPACE) and (Line[Position]<>CHAR_TAB)) do
       inc(Position);
-    end;
-  end else begin
-    if Line[Position]=FIterateChar then inc(Position);
+  end
+  else
+  begin
+    if Line[Position]=FIterateChar then
+      inc(Position);
     BeginPos:=Position;
-    while (Position<=LineSize) and (Line[Position]<>FIterateChar) do begin
+    while (Position<=LineSize) and (Line[Position]<>FIterateChar) do
       inc(Position);
-    end;
   end;
   Result:=Copy(Line,BeginPos,Position-BeginPos);
 end;
