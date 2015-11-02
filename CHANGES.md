@@ -4,6 +4,7 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+- Ability to load standard files from "tzdata" package via ParseDatabaseFromStandardFiles method.
 - Recoded algorithm that searches for applicable rule. Select the most recently activated rule by comparing target date and rule begin date in UTC forms using previous save time offset. A more consistent and transparent implementation.
 - Moved LocalTimeToGMT and GMTToLocalTime operating on TTZDateTime type to public section. This should allow to overcome alleged limitations of TDateTime type.
 - Added ParseDatabaseFromString method.
