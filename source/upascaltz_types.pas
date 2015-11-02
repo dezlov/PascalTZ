@@ -106,15 +106,15 @@ public
   procedure SortByDate;
 end;
 
-TTzZone=class
+TTZZone=class
 public
   Name: AsciiString;
   Offset: integer; //seconds
   RuleName: AsciiString;
   RuleFixedOffset: integer; //seconds
   TimeZoneLetters: AsciiString;
-  RuleValidUntilForm: TTZTimeForm;
-  RuleValidUntil: TTZDateTime;
+  ValidUntilForm: TTZTimeForm;
+  ValidUntil: TTZDateTime;
 end;
 
 TTZZoneList = specialize TFPGObjectList<TTZZone>;

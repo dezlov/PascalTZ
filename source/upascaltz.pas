@@ -137,7 +137,8 @@ begin
   Result:=nil;
   for j := 0 to AZoneList.Count - 1 do
   begin
-    if CompareDates(AZoneList[j].RuleValidUntil, ADateTime) > 0 then begin
+    // TODO: Need to properly use all possible time forms of ZONE UNTIL field.
+    if AZoneList[j].ValidUntil > ADateTime then begin
       Result:=AZoneList[j];
       Break;
     end;
@@ -331,8 +332,7 @@ begin
     // >                        0:29:44  -           BMT     1894 Jun
     // The default UNTIL time of 00:00 applies, which is assumed to be GMT in ZIC man page?
 
-    // TODO: Need to properly use all possible time forms of ZONE UNTIL field.
-    NewZone.RuleValidUntil:=ParseUntilFields(AIterator,NewZone.RuleValidUntilForm, tztfUniversal);
+    NewZone.ValidUntil := ParseUntilFields(AIterator, NewZone.ValidUntilForm, tztfUniversal);
   except
     FreeAndNil(NewZone);
     raise;
