@@ -21,6 +21,36 @@ uses
   Classes, SysUtils, FGL;
 
 const
+  TZ_FILE_CONTINENT_AFRICA       = 'africa';
+  TZ_FILE_CONTINENT_ANTARCTICA   = 'antarctica';
+  TZ_FILE_CONTINENT_ASIA         = 'asia';
+  TZ_FILE_CONTINENT_AUSTRALASIA  = 'australasia';
+  TZ_FILE_CONTINENT_EUROPE       = 'europe';
+  TZ_FILE_CONTINENT_NORTHAMERICA = 'northamerica';
+  TZ_FILE_CONTINENT_SOUTHAMERICA = 'southamerica';
+
+  TZ_FILE_OTHER_BACKWARD    = 'backward';
+  TZ_FILE_OTHER_BACKZONE    = 'backzone';
+  TZ_FILE_OTHER_ETCETERA    = 'etcetera';
+  TZ_FILE_OTHER_FACTORY     = 'factory';
+  TZ_FILE_OTHER_LEAPSECONDS = 'leapseconds';
+  TZ_FILE_OTHER_PACIFICNEW  = 'pacificnew';
+  TZ_FILE_OTHER_SYSTEMV     = 'systemv';
+
+const
+  TZ_FILES_STANDARD: array [1..9] of String = (
+    TZ_FILE_CONTINENT_AFRICA,
+    TZ_FILE_CONTINENT_ANTARCTICA,
+    TZ_FILE_CONTINENT_ASIA,
+    TZ_FILE_CONTINENT_AUSTRALASIA,
+    TZ_FILE_CONTINENT_EUROPE,
+    TZ_FILE_CONTINENT_NORTHAMERICA,
+    TZ_FILE_CONTINENT_SOUTHAMERICA,
+    TZ_FILE_OTHER_BACKWARD,
+    TZ_FILE_OTHER_ETCETERA
+  );
+
+const
   // Longest 'backward' zone name is 32 characters:
   //   "America/Argentina/ComodRivadavia"
   // Longest 'current' zones names are 30 characters:
