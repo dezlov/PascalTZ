@@ -66,7 +66,7 @@ type
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime; overload;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneAbbreviation: String): TDateTime; overload;
     procedure ParseDatabaseFromFile(const AFileName: String);
-    procedure ParseDatabaseFromFiles(const AFileNames: array of String);
+    procedure ParseDatabaseFromFiles(const AFileNames: array of String; const AFilePathPrefix: String = '');
     procedure ParseDatabaseFromString(const AString: String);
     procedure ParseDatabaseFromStream(const AStream: TStream);
     procedure ParseDatabaseFromMemory(const AData: Pointer; const ADataSize: Integer);
@@ -659,28 +659,29 @@ begin
   end;
 end;
 
-procedure TPascalTZ.ParseDatabaseFromFiles(const AFileNames: array of String);
+procedure TPascalTZ.ParseDatabaseFromFiles(const AFileNames: array of String;
+  const AFilePathPrefix: String = '');
 var
-  ADatabaseStream: TStringStream;
+  ADataStream: TStringStream;
   AFileStream: TFileStream;
   AFileName: String;
 begin
-  ADatabaseStream := TStringStream.Create('');
+  ADataStream := TStringStream.Create('');
   try
     for AFileName in AFileNames do
     begin
-      AFileStream := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyWrite);
+      AFileStream := TFileStream.Create(AFilePathPrefix + AFileName, fmOpenRead or fmShareDenyWrite);
       try
-        ADatabaseStream.CopyFrom(AFileStream, AFileStream.Size);
-        ADatabaseStream.WriteString(LineEnding + LineEnding);
+        ADataStream.CopyFrom(AFileStream, AFileStream.Size);
+        ADataStream.WriteString(LineEnding + LineEnding);
       finally
         AFileStream.Free;
       end;
     end;
-    ADatabaseStream.Position := 0;
-    ParseDatabaseFromStream(ADatabaseStream);
+    ADataStream.Position := 0;
+    ParseDatabaseFromStream(ADataStream);
   finally
-    ADatabaseStream.Free;
+    ADataStream.Free;
   end;
 end;
 
