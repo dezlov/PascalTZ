@@ -395,7 +395,7 @@ begin
     NewRule.OnRule:=TmpWord;
     //AT field
     TmpWord:=AIterator.GetNextWord;
-    // TODO: Need to properly use all possible time forms in BareParseRule
+    // Use WallClock time form as a default for RULE AT field.
     // ZIC man page: In the absence of an indicator, wall clock time is assumed.
     NewRule.AtHourTimeForm := ExtractTimeFormDefault(TmpWord, tztfWallClock);
     NewRule.AtHourTime:=TimeToSeconds(TmpWord);
