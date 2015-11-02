@@ -331,7 +331,18 @@ begin
     //And finally the UNTIL field which format is optional fields from
     //left to right: year month day hour[s]
     //defaults:      YEAR Jan   1   0:00:00
-    NewZone.RuleValidUntil:=ParseUntilFields(AIterator,NewZone.RuleValidUntilForm);
+
+    // Default time form for UNTIL field in ZONE definition ***seems*** to be UTC.
+    // It is not officially documented but can be extracted from examples in ZIC man page:
+    // > Zurich was 34 minutes and 8 seconds west of GMT until 1848-09-12 at 00:00,
+    // > when the offset changed to 29 minutes and 44 seconds.
+    // > # Zone  NAME           GMTOFF   RULES       FORMAT  UNTIL
+    // > Zone    Europe/Zurich  0:34:08  -           LMT     1848 Sep 12
+    // >                        0:29:44  -           BMT     1894 Jun
+    // The default UNTIL time of 00:00 applies, which is assumed to be GMT in ZIC man page?
+
+    // TODO: Need to properly use all possible time forms of ZONE UNTIL field.
+    NewZone.RuleValidUntil:=ParseUntilFields(AIterator,NewZone.RuleValidUntilForm, tztfUniversal);
   except
     FreeAndNil(NewZone);
     raise;

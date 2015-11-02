@@ -36,7 +36,8 @@ procedure IsGregorianLeapException(const ADate: TTZDateTime);
 function IsBeforeGregorianLeap(const ADate: TTZDateTime): Boolean;
 function ExtractTimeForm(var TimeStr: AsciiString; out TimeForm: TTZTimeForm): Boolean;
 function ExtractTimeFormDefault(var TimeStr: AsciiString; const Default: TTZTimeForm): TTZTimeForm;
-function ParseUntilFields(const AIterator: TTZLineIterate; out ATimeForm: TTZTimeForm): TTZDateTime;
+function ParseUntilFields(const AIterator: TTZLineIterate; out ATimeForm: TTZTimeForm;
+  const ADefaultTimeForm: TTZTimeForm): TTZDateTime;
 procedure MacroSolver(var ADate: TTZDateTime; const ADayString: AsciiString);
 function MacroFirstWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay): TTZDay;
 function MacroLastWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay): TTZDay;
@@ -448,7 +449,7 @@ begin
 end;
 
 function ParseUntilFields(const AIterator: TTZLineIterate;
-  out ATimeForm: TTZTimeForm): TTZDateTime;
+  out ATimeForm: TTZTimeForm; const ADefaultTimeForm: TTZTimeForm): TTZDateTime;
 var
   TmpWord: AsciiString;
 begin
@@ -459,7 +460,7 @@ begin
     Day:=1;
     SecsInDay:=0;
   end;
-  ATimeForm:=tztfUniversal;
+  ATimeForm:=ADefaultTimeForm;
   TmpWord:=AIterator.GetNextWord;
   if TmpWord='' Then Exit;
   try
@@ -483,16 +484,8 @@ begin
 
   TmpWord:=AIterator.GetNextWord;
   if TmpWord='' then Exit;
-  // TODO: Need to properly use all possible time forms in ParseUntilFields
-  // Default time form for UNTIL field in ZONE definition seems to be UTC.
-  // It is not officially documented by can be extracted from examples in ZIC man page:
-  // > Zurich was 34 minutes and 8 seconds west of GMT until 1848-09-12 at 00:00,
-  // > when the offset changed to 29 minutes and 44 seconds.
-  // > # Zone  NAME           GMTOFF   RULES       FORMAT  UNTIL
-  // > Zone    Europe/Zurich  0:34:08  -           LMT     1848 Sep 12
-  // >                        0:29:44  -           BMT     1894 Jun
-  // The default UNTIL time of 00:00 applies whis assumed to be GMT in ZIC man page.
-  ATimeForm := ExtractTimeFormDefault(TmpWord, tztfUniversal);
+
+  ATimeForm := ExtractTimeFormDefault(TmpWord, ADefaultTimeForm);
   Result.SecsInDay:=TimeToSeconds(TmpWord);
 end;
 
