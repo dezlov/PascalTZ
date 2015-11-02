@@ -74,6 +74,7 @@ public
   AtHourTime: integer; //seconds
   SaveTime: integer;   //seconds
   TimeZoneLetters: AsciiString;
+  function GetBeginDate(const AYear: Integer): TTZDateTime;
 end;
 
 TTZRuleList = specialize TFPGObjectList<TTZRule>;
@@ -168,6 +169,13 @@ uses
 const
   CHAR_SPACE=#32;
   CHAR_TAB=  #09;
+
+function TTZRule.GetBeginDate(const AYear: Integer): TTZDateTime;
+begin
+  Result := MakeTZDate(AYear, Self.InMonth, 1, 0);
+  MacroSolver(Result, Self.OnRule);
+  Result.SecsInDay := Self.AtHourTime;
+end;
 
 constructor TTZRuleGroup.Create(const AName: AsciiString);
 begin

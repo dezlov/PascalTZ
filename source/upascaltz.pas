@@ -144,13 +144,6 @@ begin
   end;
 end;
 
-function GetRuleBeginDate(const ARule: TTZRule; const AYear: Integer): TTZDateTime;
-begin
-  Result := MakeTZDate(AYear, ARule.InMonth, 1, 0);
-  MacroSolver(Result, ARule.OnRule);
-  Result.SecsInDay := ARule.AtHourTime;
-end;
-
 function TPascalTZ.FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
   const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
 var
@@ -173,7 +166,7 @@ begin
       ApplyYearMin := Max(ApplyYearMax - 1, Rule.FromYear); // previous year (bound to rule first year)
       for ApplyYear := ApplyYearMin to ApplyYearMax do
       begin
-        RuleDate := TTZRuleDate.Create(Rule, GetRuleBeginDate(Rule, ApplyYear));
+        RuleDate := TTZRuleDate.Create(Rule, Rule.GetBeginDate(ApplyYear));
         RuleDateStack.Add(RuleDate); // list owns the new item
       end;
     end;
