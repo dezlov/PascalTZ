@@ -39,6 +39,8 @@ const
   LAST_PREGREGORIAN_DAY=577737;
   FIRST_POSTGREGORIAN_DAY=LAST_PREGREGORIAN_DAY+1;
 
+  TZ_YEAR_MAX = 9999;
+
 type
   PAsciiChar=^AsciiChar;
   AsciiChar=AnsiChar;

@@ -455,7 +455,7 @@ var
 begin
   //Default Values...
   with Result do begin
-    Year:=9999;
+    Year:=TZ_YEAR_MAX;
     Month:=1;
     Day:=1;
     SecsInDay:=0;

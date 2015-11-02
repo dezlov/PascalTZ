@@ -381,8 +381,7 @@ begin
     if TmpWord='only' then begin
       NewRule.ToYear:=NewRule.FromYear;
     end else if TmpWord='max' then begin
-      //max year, so in this case 9999
-      NewRule.ToYear:=9999;
+      NewRule.ToYear:=TZ_YEAR_MAX;
     end else begin
       NewRule.ToYear:=StrToInt(TmpWord);
     end;
