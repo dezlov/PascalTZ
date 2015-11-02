@@ -1,0 +1,10 @@
+/lib/
+/bin/
+/tzdata/
+/test/
+
+*.bak
+*.dll
+*.exe
+*.dbg
+*.lps
