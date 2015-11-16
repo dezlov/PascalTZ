@@ -51,9 +51,10 @@ type
     procedure BareParseRule(const AIterator: TTZLineIterate);
     procedure BareParseLink(const AIterator: TTZLineIterate);
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
-      const AConvertDirection: TTZConvertDirection): TTZDateTime; overload;
+      const ASourceTimeForm, ATargetTimeForm: TTZTimeForm): TTZDateTime; overload;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
-      const AConvertDirection: TTZConvertDirection; out ATimeZoneAbbreviation: String): TTZDateTime; overload;
+      const ASourceTimeForm, ATargetTimeForm: TTZTimeForm;
+      out ATimeZoneAbbreviation: String): TTZDateTime; overload;
   public
     property CountZones: Integer read GetCountZones;
     property CountRules: Integer read GetCountRules;
@@ -561,30 +562,27 @@ begin
   Result := (FindZoneGroup(AZone, AIncludeLinks) <> nil);
 end;
 
-function TPascalTZ.Convert(const ADateTime: TTZDateTime;
-  const AZone: String; const AConvertDirection: TTZConvertDirection): TTZDateTime;
+function TPascalTZ.Convert(const ADateTime: TTZDateTime; const AZone: String;
+  const ASourceTimeForm, ATargetTimeForm: TTZTimeForm): TTZDateTime;
 var
   ATimeZoneAbbreviation: String; // dummy
 begin
-  Result := Convert(ADateTime, AZone, AConvertDirection, ATimeZoneAbbreviation);
+  Result := Convert(ADateTime, AZone, ASourceTimeForm, ATargetTimeForm, ATimeZoneAbbreviation);
 end;
 
-function TPascalTZ.Convert(const ADateTime: TTZDateTime;
-  const AZone: String; const AConvertDirection: TTZConvertDirection;
+function TPascalTZ.Convert(const ADateTime: TTZDateTime; const AZone: String;
+  const ASourceTimeForm, ATargetTimeForm: TTZTimeForm;
   out ATimeZoneAbbreviation: String): TTZDateTime;
 var
   Zone: TTZZone;
   ZoneGroup: TTZZoneGroup;
-  SaveTime: integer;
-  SourceTimeForm, TargetTimeForm: TTZTimeForm;
+  SaveTimeOffset: Integer;
 begin
-  // Figure out source and target time forms
-  if not ConvertDirectionToTimeForms(AConvertDirection, SourceTimeForm, TargetTimeForm) then
-  begin
-    // Return the original date if convert direction is unknown
-    Result := ADateTime;
+  Result := ADateTime;
+
+  // Same source and target time forms, exit
+  if ASourceTimeForm = ATargetTimeForm then
     Exit;
-  end;
 
   // Find zone group by name
   ZoneGroup:=FindZoneGroup(AZone, True);
@@ -598,16 +596,25 @@ begin
     raise TTZException.CreateFmt('No valid conversion rule for Zone [%s]', [AZone]);
   end;
 
-  // Find appropriate save time (DST) offset
-  SaveTime := FindZoneSaveTimeOffset(Zone, ADateTime, SourceTimeForm, ATimeZoneAbbreviation);
+  // Source and target time forms are not dependant on rules for save time offset
+  if (ASourceTimeForm <> tztfWallClock) and (ATargetTimeForm <> tztfWallClock) then
+  begin
+    SaveTimeOffset := 0;
+    ATimeZoneAbbreviation := ResolveTimeZoneAbbreviation(Zone.TimeZoneLetters, '', False);
+  end
+  // Find appropriate save time offset
+  else
+  begin
+    SaveTimeOffset := FindZoneSaveTimeOffset(Zone, ADateTime, ASourceTimeForm, ATimeZoneAbbreviation);
+  end;
 
   // Convert to the target time form
-  Result := ConvertToTimeForm(ADateTime, Zone.Offset, SaveTime, SourceTimeForm, TargetTimeForm);
+  Result := ConvertToTimeForm(ADateTime, Zone.Offset, SaveTimeOffset, ASourceTimeForm, ATargetTimeForm);
 
-  // Check for invalid local time (supplied local time does not exist due to DST change)
-  if FDetectInvalidLocalTimes and (AConvertDirection = tzcdLocalToUniversal) then
-    if CompareDates(ADateTime,Convert(Result,AZone,tzcdUniversalToLocal))<>0 then
-      Raise TTZException.CreateFmt('The time %s does not exists in %s',[DateTimeToStr(ADateTime),AZone]);
+  // Check for invalid local time (supplied local time may not exist due to DST change)
+  if FDetectInvalidLocalTimes and (ASourceTimeForm = tztfWallClock) then
+    if ADateTime <> Convert(Result,AZone,ATargetTimeForm,ASourceTimeForm) then
+      raise TTZException.CreateFmt('The time %s does not exist in %s',[DateTimeToStr(ADateTime),AZone]);
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime;
@@ -630,7 +637,7 @@ end;
 function TPascalTZ.GMTToLocalTime(const ADateTime: TTZDateTime;
   const AToZone: String; out ATimeZoneAbbreviation: String): TTZDateTime;
 begin
-  Result := Convert(ADateTime, AToZone, tzcdUniversalToLocal, ATimeZoneAbbreviation);
+  Result := Convert(ADateTime, AToZone, tztfUniversal, tztfWallClock, ATimeZoneAbbreviation);
 end;
 
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TDateTime;
@@ -646,7 +653,7 @@ end;
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TTZDateTime;
   const AFromZone: String): TTZDateTime;
 begin
-  Result := Convert(ADateTime, AFromZone, tzcdLocalToUniversal);
+  Result := Convert(ADateTime, AFromZone, tztfWallClock, tztfUniversal);
 end;
 
 function TPascalTZ.TimeZoneToTimeZone(const ADateTime: TDateTime;

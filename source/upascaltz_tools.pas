@@ -56,8 +56,6 @@ function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTim
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
 function ConvertToTimeForm(const SourceDateTime: TTZDateTime; const StandardTimeOffset, SaveTimeOffset: Integer;
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): TTZDateTime;
-function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
-  out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
 function TimeFormToStr(const ATimeForm: TTZTimeForm): String;
 
 operator < (const ADate, BDate: TTZDateTime): Boolean;
@@ -115,26 +113,6 @@ begin
     tztfStandard:  Result := 'S';
     tztfUniversal: Result := 'U';
     else           Result := '?';
-  end;
-end;
-
-function ConvertDirectionToTimeForms(const ConvertDirection: TTZConvertDirection;
-  out SourceTimeForm, TargetTimeForm: TTZTimeForm): Boolean;
-begin
-  Result := True;
-  case ConvertDirection of
-    tzcdUniversalToLocal:
-      begin
-        SourceTimeForm := tztfUniversal;
-        TargetTimeForm := tztfWallClock;
-      end;
-    tzcdLocalToUniversal:
-      begin
-        SourceTimeForm := tztfWallClock;
-        TargetTimeForm := tztfUniversal;
-      end;
-    else
-      Result := False;
   end;
 end;
 

@@ -80,7 +80,6 @@ type
   TTZSecond= 0..59;
   TTZWeekDay=(eTZSunday=1,eTZMonday,eTZTuesday,eTZWednesday,eTZThursday,eTZFriday,eTZSaturday);
   TTZTimeForm=(tztfWallClock, tztfStandard, tztfUniversal);
-  TTZConvertDirection=(tzcdUniversalToLocal, tzcdLocalToUniversal);
 
 type
 TTZDateTime=record
