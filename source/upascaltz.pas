@@ -32,15 +32,6 @@ type
     FZoneGroups: TTZZoneGroupList;
     FLinks: TTZLinkList;
     procedure DatabaseChanged;
-    function FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
-      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
-    function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
-    function FindZoneGroup(const AZone: AsciiString; const AIncludeLinks: Boolean): TTZZoneGroup;
-    function FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
-    function FindLink(const ALinkName: AsciiString): TTZLink;
-    function FindZoneSaveTimeOffset(const AZone: TTZZone;
-      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm;
-      out ATimeZoneAbbreviation: String): Integer;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
     function GetCountLinks: Integer;
@@ -50,6 +41,17 @@ type
     procedure BareParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
     procedure BareParseRule(const AIterator: TTZLineIterate);
     procedure BareParseLink(const AIterator: TTZLineIterate);
+  // Keep interesting methods in "protected" section so they could be accessed by sub-classes.
+  protected
+    function FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
+      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
+    function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
+    function FindZoneGroup(const AZone: AsciiString; const AIncludeLinks: Boolean): TTZZoneGroup;
+    function FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
+    function FindLink(const ALinkName: AsciiString): TTZLink;
+    function FindZoneSaveTimeOffset(const AZone: TTZZone;
+      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm;
+      out ATimeZoneAbbreviation: String): Integer;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
       const ASourceTimeForm, ATargetTimeForm: TTZTimeForm): TTZDateTime; overload;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
