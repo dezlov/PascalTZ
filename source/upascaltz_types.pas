@@ -81,6 +81,12 @@ type
   TTZWeekDay=(eTZSunday=1,eTZMonday,eTZTuesday,eTZWednesday,eTZThursday,eTZFriday,eTZSaturday);
   TTZTimeForm=(tztfWallClock, tztfStandard, tztfUniversal);
 
+const
+  // ZIC man page:
+  // For RULE IN/ON/AT fields and ZONE UNTIL fields,
+  // in the absence of an indicator, wall clock time is assumed.
+  TZ_TIME_FORM_DEFAULT = tztfWallClock;
+
 type
 TTZDateTime=record
   Year: smallint;

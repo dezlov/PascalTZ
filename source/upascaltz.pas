@@ -373,16 +373,10 @@ begin
     // left to right: year month day hour[s]
     // defaults:      YEAR Jan   1   0:00:00
 
-    // Default time form for UNTIL field in ZONE definition ***seems*** to be UTC.
-    // It is not officially documented but can be extracted from examples in ZIC man page:
-    // > Zurich was 34 minutes and 8 seconds west of GMT until 1848-09-12 at 00:00,
-    // > when the offset changed to 29 minutes and 44 seconds.
-    // > # Zone  NAME           GMTOFF   RULES       FORMAT  UNTIL
-    // > Zone    Europe/Zurich  0:34:08  -           LMT     1848 Sep 12
-    // >                        0:29:44  -           BMT     1894 Jun
-    // The default UNTIL time of 00:00 applies, which is assumed to be GMT in ZIC man page?
-
-    NewZone.ValidUntil := ParseUntilFields(AIterator, NewZone.ValidUntilForm, tztfUniversal);
+    // ZIC man page:
+    // ZONE UNTIL field uses the same format as the IN, ON, and AT fields of a rule.
+    // Hence, in the absence of an indicator, wall clock time is assumed.
+    NewZone.ValidUntil := ParseUntilFields(AIterator, NewZone.ValidUntilForm, TZ_TIME_FORM_DEFAULT);
   except
     FreeAndNil(NewZone);
     raise;
@@ -451,9 +445,9 @@ begin
 
     // AT field
     TmpWord := AIterator.GetNextWord;
-    // Use WallClock time form as a default for RULE AT field.
-    // ZIC man page: In the absence of an indicator, wall clock time is assumed.
-    NewRule.AtHourTimeForm := ExtractTimeFormDefault(TmpWord, tztfWallClock);
+    // ZIC man page:
+    // In RULE AT field, in the absence of an indicator, wall clock time is assumed.
+    NewRule.AtHourTimeForm := ExtractTimeFormDefault(TmpWord, TZ_TIME_FORM_DEFAULT);
     NewRule.AtHourTime := TimeToSeconds(TmpWord);
 
     // SAVE field
