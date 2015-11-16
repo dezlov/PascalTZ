@@ -92,37 +92,35 @@ uses
 
 function TPascalTZ.FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
 var
-  j: integer;
+  Group: TTZRuleGroup;
 begin
-  Result:=nil;
-  for j := 0 to FRuleGroups.Count-1 do begin
-    if FRuleGroups[j].Name=AName then begin
-      Result:=FRuleGroups[j];
-      Break;
-    end;
+  Result := nil;
+  for Group in FRuleGroups do
+  begin
+    if Group.Name = AName then
+      Exit(Group);
   end;
 end;
 
 function TPascalTZ.FindLink(const ALinkName: AsciiString): TTZLink;
 var
-  j: integer;
+  Link: TTZLink;
 begin
-  Result:=nil;
-  for j := 0 to FLinks.Count-1 do begin
-    if FLinks[j].LinkName=ALinkName then begin
-      Result:=FLinks[j];
-      Break;
-    end;
+  Result := nil;
+  for Link in FLinks do
+  begin
+    if Link.LinkName = ALinkName then
+      Exit(Link);
   end;
 end;
 
 function TPascalTZ.FindZoneGroup(const AZone: AsciiString; const AIncludeLinks: Boolean): TTZZoneGroup;
 var
   Link: TTZLink;
+  ZoneGroup: TTZZoneGroup;
   TargetZone: AsciiString;
-  j: integer;
 begin
-  Result:=nil;
+  Result := nil;
   TargetZone := AZone;
   if AIncludeLinks then
   begin
@@ -130,11 +128,10 @@ begin
     if Link <> nil then
       TargetZone := Link.LinkTarget;
   end;
-  for j := 0 to FZoneGroups.Count-1 do begin
-    if FZoneGroups[j].Name=TargetZone then begin
-      Result:=FZoneGroups[j];
-      Break;
-    end;
+  for ZoneGroup in FZoneGroups do
+  begin
+    if ZoneGroup.Name = TargetZone then
+      Exit(ZoneGroup);
   end;
 end;
 
