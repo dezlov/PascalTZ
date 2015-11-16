@@ -146,6 +146,11 @@ end;
 
 TTZZoneList = specialize TFPGObjectList<TTZZone>;
 
+TTZZoneListHelper = class helper for TTZZoneList
+public
+  procedure SortByValidUntil;
+end;
+
 TTZZoneGroup = class
 private
   FList: TTZZoneList;
@@ -210,6 +215,16 @@ end;
 destructor TTZRuleGroup.Destroy;
 begin
   FreeAndNil(FList);
+end;
+
+function CompareZonesByValidUntil(const ItemA, ItemB: TTZZone): Integer;
+begin
+  Result := CompareDates(ItemA.ValidUntil, ItemB.ValidUntil);
+end;
+
+procedure TTZZoneListHelper.SortByValidUntil;
+begin
+  Self.Sort(@CompareZonesByValidUntil);
 end;
 
 constructor TTZZoneGroup.Create(const AName: AsciiString);

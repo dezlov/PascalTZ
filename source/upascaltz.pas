@@ -31,6 +31,7 @@ type
     FRuleGroups: TTZRuleGroupList;
     FZoneGroups: TTZZoneGroupList;
     FLinks: TTZLinkList;
+    procedure DatabaseChanged;
     function FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
       const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
     function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
@@ -133,14 +134,16 @@ end;
 
 function TPascalTZ.FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
 var
-  j: integer;
+  Zone: TTZZone;
 begin
-  Result:=nil;
-  for j := 0 to AZoneList.Count - 1 do
+  Result := nil;
+  // Assumes that zone list is sorted by ZONE UNTIL date (regardless of time form)
+  for Zone in AZoneList do
   begin
     // TODO: Need to properly use all possible time forms of ZONE UNTIL field.
-    if AZoneList[j].ValidUntil > ADateTime then begin
-      Result:=AZoneList[j];
+    if Zone.ValidUntil > ADateTime then
+    begin
+      Result := Zone;
       Break;
     end;
   end;
@@ -732,39 +735,52 @@ var
   LineBegin, LineSize, LineCounter: Integer;
   ParseSequence: TParseSequence;
 begin
-  Buffer := AData;
-  ParseStatusTAG := '';
-  ParseStatusPreviousZone := '';
-  ParseSequence:=TTzParseRule;
-  while ParseSequence<TTzParseFinish do begin
-    LineCounter:=1;
-    LineBegin:=0;
-    LineSize:=0;
-    while LineBegin<ADataSize do begin
-      if (Buffer[LineBegin+LineSize]=#13) or (Buffer[LineBegin+LineSize]=#10) then begin
+  try
+    Buffer := AData;
+    ParseStatusTAG := '';
+    ParseStatusPreviousZone := '';
+    ParseSequence:=TTzParseRule;
+    while ParseSequence<TTzParseFinish do begin
+      LineCounter:=1;
+      LineBegin:=0;
+      LineSize:=0;
+      while LineBegin<ADataSize do begin
+        if (Buffer[LineBegin+LineSize]=#13) or (Buffer[LineBegin+LineSize]=#10) then begin
+          SetLength(ThisLine,LineSize);
+          Move(Buffer[LineBegin],ThisLine[1],LineSize);
+          ParseLine(LineCounter, ThisLine, ParseSequence);
+          inc(LineBegin,LineSize);
+          LineSize:=0;
+          while (LineBegin<ADataSize) and ((Buffer[LineBegin]=#13) or (Buffer[LineBegin]=#10)) do begin
+            if Buffer[LineBegin]=#10 then begin
+              inc(LineCounter);
+            end;
+            inc(LineBegin);
+          end;
+        end else begin
+          inc(LineSize);
+        end;
+      end;
+      if LineSize>0 then begin
+        inc(LineCounter);
         SetLength(ThisLine,LineSize);
         Move(Buffer[LineBegin],ThisLine[1],LineSize);
         ParseLine(LineCounter, ThisLine, ParseSequence);
-        inc(LineBegin,LineSize);
-        LineSize:=0;
-        while (LineBegin<ADataSize) and ((Buffer[LineBegin]=#13) or (Buffer[LineBegin]=#10)) do begin
-          if Buffer[LineBegin]=#10 then begin
-            inc(LineCounter);
-          end;
-          inc(LineBegin);
-        end;
-      end else begin
-        inc(LineSize);
       end;
+      ParseSequence:=Succ(ParseSequence);
     end;
-    if LineSize>0 then begin
-      inc(LineCounter);
-      SetLength(ThisLine,LineSize);
-      Move(Buffer[LineBegin],ThisLine[1],LineSize);
-      ParseLine(LineCounter, ThisLine, ParseSequence);
-    end;
-    ParseSequence:=Succ(ParseSequence);
+  finally
+    DatabaseChanged;
   end;
+end;
+
+procedure TPascalTZ.DatabaseChanged;
+var
+  ZoneGroup: TTZZoneGroup;
+begin
+  // Sort zone definitions by ZONE UNTIL date (regardless of time form)
+  for ZoneGroup in FZoneGroups do
+    ZoneGroup.List.SortByValidUntil;
 end;
 
 procedure TPascalTZ.ClearDatabase;
