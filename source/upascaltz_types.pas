@@ -119,16 +119,16 @@ end;
 
 TTZRuleGroupList = specialize TFPGObjectList<TTZRuleGroup>;
 
-TTZRuleDate=class
+TTZDateListItem=class
 public
   Date: TTZDateTime;
   Rule: TTZRule;
   constructor Create(const ARule: TTZRule; const ADate: TTZDateTime);
 end;
 
-TTZRuleDateList = specialize TFPGObjectList<TTZRuleDate>;
+TTZDateList = specialize TFPGObjectList<TTZDateListItem>;
 
-TTZRuleDateStack = class(TTZRuleDateList)
+TTZDateStack = class(TTZDateList)
 public
   procedure SortByDate;
 end;
@@ -223,20 +223,20 @@ begin
   FreeAndNil(FList);
 end;
 
-constructor TTZRuleDate.Create(const ARule: TTZRule; const ADate: TTZDateTime);
+constructor TTZDateListItem.Create(const ARule: TTZRule; const ADate: TTZDateTime);
 begin
   Self.Rule := ARule;
   Self.Date := ADate;
 end;
 
-function CompareRuleDate(const RuleDateA, RuleDateB: TTZRuleDate): Integer;
+function CompareDateListItems(const ItemA, ItemB: TTZDateListItem): Integer;
 begin
-  Result := CompareDates(RuleDateA.Date, RuleDateB.Date);
+  Result := CompareDates(ItemA.Date, ItemB.Date);
 end;
 
-procedure TTZRuleDateStack.SortByDate;
+procedure TTZDateStack.SortByDate;
 begin
-  Self.Sort(@CompareRuleDate);
+  Self.Sort(@CompareDateListItems);
 end;
 
 { TTZLineIterate }

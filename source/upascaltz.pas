@@ -153,13 +153,13 @@ var
   RuleBeginPreviousSaveUTC: TTZDateTime;
   ApplyYear, ApplyYearMax, ApplyYearMin: Integer;
   Rule: TTZRule;
-  RuleDate: TTZRuleDate;
-  RuleDateStack: TTZRuleDateStack;
+  DateItem: TTZDateListItem;
+  DateStack: TTZDateStack;
   PreviousSaveTimeOffset: Integer;
   IsApplicableRule: Boolean;
 begin
   Result := nil;
-  RuleDateStack := TTZRuleDateStack.Create(True); // FreeObjects = True
+  DateStack := TTZDateStack.Create(True); // FreeObjects = True
   try
     // Generate rule activation dates for the most recent and previous year.
     for Rule in ARuleList do
@@ -168,13 +168,13 @@ begin
       ApplyYearMin := Max(ApplyYearMax - 1, Rule.FromYear); // previous year (bound to rule first year)
       for ApplyYear := ApplyYearMin to ApplyYearMax do
       begin
-        RuleDate := TTZRuleDate.Create(Rule, Rule.GetBeginDate(ApplyYear));
-        RuleDateStack.Add(RuleDate); // list owns the new item
+        DateItem := TTZDateListItem.Create(Rule, Rule.GetBeginDate(ApplyYear));
+        DateStack.Add(DateItem); // list owns the new item
       end;
     end;
 
     // Sort by rule activation date in ascending order.
-    RuleDateStack.SortByDate;
+    DateStack.SortByDate;
 
     // Select the most recently activated rule by comparing target date
     // and rule begin date in UTC forms using previous save time offset.
@@ -184,23 +184,23 @@ begin
     // to have a consistent and transparent operation. Other time zone libraries
     // (e.g. PHP, Howard Hinnant TZ) seem to be using a similar approach.
     PreviousSaveTimeOffset := 0;
-    for RuleDate in RuleDateStack do
+    for DateItem in DateStack do
     begin
       TargetDatePreviousSaveUTC := ConvertToTimeForm(ADateTime,
         AZone.Offset, PreviousSaveTimeOffset, // use previous save time
         ATimeForm, tztfUniversal);
-      RuleBeginPreviousSaveUTC := ConvertToTimeForm(RuleDate.Date,
+      RuleBeginPreviousSaveUTC := ConvertToTimeForm(DateItem.Date,
         AZone.Offset, PreviousSaveTimeOffset, // use previous save time
-        RuleDate.Rule.AtHourTimeForm, tztfUniversal);
+        DateItem.Rule.AtHourTimeForm, tztfUniversal);
 
       IsApplicableRule := (RuleBeginPreviousSaveUTC <= TargetDatePreviousSaveUTC);
       if IsApplicableRule then
-        Result := RuleDate.Rule;
+        Result := DateItem.Rule;
 
-      PreviousSaveTimeOffset := RuleDate.Rule.SaveTime;
+      PreviousSaveTimeOffset := DateItem.Rule.SaveTime;
     end;
   finally
-    RuleDateStack.Free;
+    DateStack.Free;
   end;
 end;
 
