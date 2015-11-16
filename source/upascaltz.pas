@@ -216,7 +216,7 @@ function TPascalTZ.FindZoneSaveTimeOffset(const AZone: TTZZone;
 var
   Rule: TTZRule;
   RuleGroup: TTZRuleGroup;
-  RuleLetters: String;
+  RuleLetters: AsciiString;
 begin
   Result := 0;
   RuleLetters := '';
