@@ -584,16 +584,14 @@ begin
     Exit;
 
   // Find zone group by name
-  ZoneGroup:=FindZoneGroup(AZone, True);
-  if ZoneGroup = nil then begin
+  ZoneGroup := FindZoneGroup(AZone, True);
+  if ZoneGroup = nil then
     raise TTZException.CreateFmt('Zone not found [%s]', [AZone]);
-  end;
 
   // Find appropriate zone from the group
-  Zone:=FindZoneForDate(ZoneGroup.List,ADateTime);
-  if Zone = nil then begin
+  Zone := FindZoneForDate(ZoneGroup.List, ADateTime);
+  if Zone = nil then
     raise TTZException.CreateFmt('No valid conversion rule for Zone [%s]', [AZone]);
-  end;
 
   // Source and target time forms are not dependant on rules for save time offset
   if (ASourceTimeForm <> tztfWallClock) and (ATargetTimeForm <> tztfWallClock) then
@@ -612,8 +610,8 @@ begin
 
   // Check for invalid local time (supplied local time may not exist due to DST change)
   if FDetectInvalidLocalTimes and (ASourceTimeForm = tztfWallClock) then
-    if ADateTime <> Convert(Result,AZone,ATargetTimeForm,ASourceTimeForm) then
-      raise TTZException.CreateFmt('The time %s does not exist in %s',[DateTimeToStr(ADateTime),AZone]);
+    if ADateTime <> Convert(Result, AZone, ATargetTimeForm, ASourceTimeForm) then
+      raise TTZException.CreateFmt('The time %s does not exist in %s', [DateTimeToStr(ADateTime), AZone]);
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime;
@@ -626,11 +624,11 @@ end;
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime;
   const AToZone: String; out ATimeZoneAbbreviation: String): TDateTime;
 var
-  MilliSeconds: integer;
+  MilliSeconds: Integer;
 begin
-  MilliSeconds:=MilliSecondOfTheSecond(ADateTime);
-  Result:=TZDateToPascalDate(GMTToLocalTime(PascalDateToTZDate(ADateTime),AToZone,ATimeZoneAbbreviation));
-  Result:=IncMilliSecond(Result,MilliSeconds);
+  MilliSeconds := MilliSecondOfTheSecond(ADateTime);
+  Result := TZDateToPascalDate(GMTToLocalTime(PascalDateToTZDate(ADateTime), AToZone, ATimeZoneAbbreviation));
+  Result := IncMilliSecond(Result, MilliSeconds);
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TTZDateTime;
@@ -642,11 +640,11 @@ end;
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TDateTime;
   const AFromZone: String): TDateTime;
 var
-  MilliSeconds: integer;
+  MilliSeconds: Integer;
 begin
-  MilliSeconds:=MilliSecondOfTheSecond(ADateTime);
-  Result:=TZDateToPascalDate(LocalTimeToGMT(PascalDateToTZDate(ADateTime),AFromZone));
-  Result:=IncMilliSecond(Result,MilliSeconds);
+  MilliSeconds := MilliSecondOfTheSecond(ADateTime);
+  Result := TZDateToPascalDate(LocalTimeToGMT(PascalDateToTZDate(ADateTime), AFromZone));
+  Result := IncMilliSecond(Result, MilliSeconds);
 end;
 
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TTZDateTime;
@@ -668,10 +666,10 @@ function TPascalTZ.TimeZoneToTimeZone(const ADateTime: TDateTime;
 var
   Tmp: TTZDateTime;
 begin
-  Tmp:=PascalDateToTZDate(ADateTime);
-  Tmp:=LocalTimeToGMT(Tmp,AFromZone);
-  Tmp:=GMTToLocalTime(Tmp,AToZone,ATimeZoneAbbreviation);
-  Result:=TZDateToPascalDate(Tmp);
+  Tmp := PascalDateToTZDate(ADateTime);
+  Tmp := LocalTimeToGMT(Tmp, AFromZone);
+  Tmp := GMTToLocalTime(Tmp, AToZone, ATimeZoneAbbreviation);
+  Result := TZDateToPascalDate(Tmp);
 end;
 
 procedure TPascalTZ.ParseDatabaseFromStandardFiles(const ADirectory: String);
@@ -688,7 +686,7 @@ procedure TPascalTZ.ParseDatabaseFromFile(const AFileName: String);
 var
   FileStream: TFileStream;
 begin
-  FileStream:=TFileStream.Create(AFileName,fmOpenRead or fmShareDenyWrite);
+  FileStream := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyWrite);
   try
     ParseDatabaseFromStream(FileStream);
   finally
@@ -707,7 +705,8 @@ begin
   try
     for AFileName in AFileNames do
     begin
-      AFileStream := TFileStream.Create(AFilePathPrefix + AFileName, fmOpenRead or fmShareDenyWrite);
+      AFileStream := TFileStream.Create(AFilePathPrefix + AFileName,
+        fmOpenRead or fmShareDenyWrite);
       try
         ADataStream.CopyFrom(AFileStream, AFileStream.Size);
         ADataStream.WriteString(LineEnding + LineEnding);
@@ -741,7 +740,8 @@ var
 begin
   BufferSize := AStream.Size - AStream.Position;
   Buffer := GetMem(BufferSize);
-  if not Assigned(Buffer) then // depends on variable "ReturnNilIfGrowHeapFails"
+  // GetMem does not throw exception when "ReturnNilIfGrowHeapFails" is TRUE.
+  if not Assigned(Buffer) then
     raise EOutOfMemory.Create(SErrOutOfMemory);
   try
     AStream.ReadBuffer(Buffer^, BufferSize);
