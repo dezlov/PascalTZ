@@ -226,10 +226,10 @@ begin
   if Length(AZone.RuleName) > 0 then
     RuleGroup := FindRuleGroup(AZone.RuleName);
 
-  // No rule is applied, use the zone fixed offset
+  // No rule is applied, use fixed save time offset
   if RuleGroup = nil then
   begin
-    Result := AZone.RuleFixedOffset;
+    Result := AZone.FixedSaveTime;
   end
   // Found list of rules, now find an applicable rule
   else
@@ -345,22 +345,23 @@ begin
       raise TTZException.CreateFmt('Rule on Zone line "%s" empty.', [AIterator.CurrentLine]);
     if RuleName = '-' then
     begin
-      // Standard time (Local time)
-      NewZone.RuleFixedOffset := 0;
+      // Always standard time
+      NewZone.FixedSaveTime := 0;
       NewZone.RuleName := '';
     end
     else if RuleName[1] in ['0'..'9'] then
     begin
-      // Fixed offset time to get standard time (Local time)
-      NewZone.RuleFixedOffset := TimeToSeconds(RuleName);
+      // Fixed save time offset
+      NewZone.FixedSaveTime := TimeToSeconds(RuleName);
       NewZone.RuleName := '';
     end
     else
     begin
+      // Dynamic save time offset as defined by rules
       if FindRuleGroup(RuleName) = nil then
         raise TTZException.CreateFmt('Rule on Zone line "%s" not found.', [AIterator.CurrentLine]);
       NewZone.RuleName := RuleName;
-      NewZone.RuleFixedOffset := 0; // Nonsense value.
+      NewZone.FixedSaveTime := 0;
     end;
 
     // Now its time for the format (GMT, BST, ...)

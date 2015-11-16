@@ -143,7 +143,7 @@ public
   Name: AsciiString;
   Offset: integer; //seconds
   RuleName: AsciiString;
-  RuleFixedOffset: integer; //seconds
+  FixedSaveTime: integer; //seconds
   TimeZoneLetters: AsciiString;
   ValidUntilForm: TTZTimeForm;
   ValidUntil: TTZDateTime;
