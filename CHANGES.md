@@ -37,4 +37,6 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## 1.0 (2009-11-10)
 
-- Original version.
+**Warning:** Major data parsing and time zone conversions problems are present in PascalTZ 1.0. You are strongly advised to use a newer version.
+
+- Original version published by *José Mejuto*.
