@@ -265,48 +265,55 @@ var
   ZoneContinue: Boolean;
   spCount: integer;
 begin
-  PreParseLine:=ALine;
-  j:=Pos('#',PreParseLine);
-  if j>0 then PreParseLine:=Copy(PreParseLine,1,j-1);
-  spCount:=0;
-  for j := 1 to Length(PreParseLine) do begin
-    if PreParseLine[j]=#9 then PreParseLine[j]:=#32;
-    if PreParseLine[j]=#32 then begin
+  PreParseLine := ALine;
+  j := Pos('#',PreParseLine);
+  if j > 0 then
+    PreParseLine := Copy(PreParseLine,1,j-1);
+  spCount := 0;
+  for j := 1 to Length(PreParseLine) do
+  begin
+    if PreParseLine[j] = #9 then
+      PreParseLine[j] := #32;
+    if PreParseLine[j] = #32 then
       inc(spCount);
-    end;
   end;
-  if spCount=Length(PreParseLine) Then PreParseLine:=''; //all spaces in line
-  if Length(PreParseLine)>0 then begin
-    Parser:=TTZLineIterate.Create(PreParseLine);
+  if spCount = Length(PreParseLine) then
+    PreParseLine := ''; // all spaces in line
+  if Length(PreParseLine) > 0 then
+  begin
+    Parser := TTZLineIterate.Create(PreParseLine);
     try
-      ZoneContinue:=false;
-      if (PreParseLine[1]=#32) or (PreParseLine[1]=#9) then begin
-        //Its a continuation
-        if ParseStatusTAG<>'Zone' then begin
+      ZoneContinue := false;
+      if (PreParseLine[1] = #32) or (PreParseLine[1] = #9) then
+      begin
+        // It is a continuation
+        if ParseStatusTAG <> 'Zone' then
           raise TTZException.CreateFmt('Continuation for line tag "%s" is not allowed', [ParseStatusTAG]);
-        end;
-        ZoneContinue:=true;
-      end else begin
-        ParseStatusTAG:=Parser.GetNextWord;
-      end;
-      if (ParseStatusTAG='Zone') then begin
-        if (AParseSequence=TTzParseZone) Then begin
-          if not ZoneContinue then begin
-            ParseStatusPreviousZone:=Parser.GetNextWord;
-          end;
+        ZoneContinue := true;
+      end
+      else
+        ParseStatusTAG := Parser.GetNextWord;
+      if (ParseStatusTAG = 'Zone') then
+      begin
+        if (AParseSequence = TTzParseZone) then
+        begin
+          if not ZoneContinue then
+            ParseStatusPreviousZone := Parser.GetNextWord;
           BareParseZone(Parser,ParseStatusPreviousZone);
         end;
-      end else if (ParseStatusTAG='Rule') then begin
-        if (AParseSequence=TTzParseRule) then begin
+      end
+      else if (ParseStatusTAG = 'Rule') then
+      begin
+        if (AParseSequence = TTzParseRule) then
           BareParseRule(Parser);
-        end;
-      end else if ParseStatusTAG='Link' then begin
-        if (AParseSequence=TTzParseLink) then begin
+      end
+      else if ParseStatusTAG = 'Link' then
+      begin
+        if (AParseSequence = TTzParseLink) then
           BareParseLink(Parser);
-        end;
-      end else begin
+      end
+      else
         raise TTZException.CreateFmt('Unknown line tag "%s"', [ParseStatusTAG]);
-      end;
     finally
       Parser.Free;
     end;
@@ -323,48 +330,48 @@ var
 begin
   NewZone := TTZZone.Create;
   try
-    //First is the zone name
-    if Length(AZone)>TZ_ZONENAME_SIZE then begin
-      Raise TTZException.CreateFmt('Name on Zone line "%s" too long. (Increase source code TZ_ZONENAME_SIZE)',[AIterator.CurrentLine]);
-    end;
-    NewZone.Name:=AZone;
+    // First is the zone name
+    if Length(AZone) > TZ_ZONENAME_SIZE then
+      raise TTZException.CreateFmt('Name on Zone line "%s" too long. (TZ_ZONENAME_SIZE)', [AIterator.CurrentLine]);
+    NewZone.Name := AZone;
 
-    //Now check the offset
-    TmpWord:=AIterator.GetNextWord; //Offset
-    NewZone.Offset:=TimeToSeconds(TmpWord);
+    // Now check the offset
+    TmpWord := AIterator.GetNextWord; // Offset
+    NewZone.Offset := TimeToSeconds(TmpWord);
 
-    //Now check the rules...
-    RuleName:=AIterator.GetNextWord;
-    if RuleName='' Then begin
-      Raise TTZException.CreateFmt('Rule on Zone line "%s" empty.',[AIterator.CurrentLine]);
-    end;
-    if RuleName='-' then begin
-      //Standard time (Local time)
-      NewZone.RuleFixedOffset:=0;
-      NewZone.RuleName:='';
-    end else if RuleName[1] in ['0'..'9'] then begin
-      //Fixed offset time to get standard time (Local time)
-      NewZone.RuleFixedOffset:=TimeToSeconds(RuleName);
-      NewZone.RuleName:='';
-    end else begin
-      if FindRuleGroup(RuleName) = nil then begin
-        Raise TTZException.CreateFmt('Rule on Zone line "%s" not found.',[AIterator.CurrentLine]);
-      end else begin
-        NewZone.RuleName:=RuleName;
-        NewZone.RuleFixedOffset:=0; //Nonsense value.
-      end;
+    // Now check the rules...
+    RuleName := AIterator.GetNextWord;
+    if RuleName = '' then
+      raise TTZException.CreateFmt('Rule on Zone line "%s" empty.', [AIterator.CurrentLine]);
+    if RuleName = '-' then
+    begin
+      // Standard time (Local time)
+      NewZone.RuleFixedOffset := 0;
+      NewZone.RuleName := '';
+    end
+    else if RuleName[1] in ['0'..'9'] then
+    begin
+      // Fixed offset time to get standard time (Local time)
+      NewZone.RuleFixedOffset := TimeToSeconds(RuleName);
+      NewZone.RuleName := '';
+    end
+    else
+    begin
+      if FindRuleGroup(RuleName) = nil then
+        raise TTZException.CreateFmt('Rule on Zone line "%s" not found.', [AIterator.CurrentLine]);
+      NewZone.RuleName := RuleName;
+      NewZone.RuleFixedOffset := 0; // Nonsense value.
     end;
 
-    //Now its time for the format (GMT, BST, ...)
-    TmpWord:=AIterator.GetNextWord;
-    if Length(TmpWord)>TZ_TIMEZONELETTERS_SIZE Then begin
-      Raise TTZException.CreateFmt('Format on Zone line "%s" too long. (Increase source code TZ_TIMEZONELETTERS_SIZE)',[AIterator.CurrentLine]);
-    end;
-    NewZone.TimeZoneLetters:=TmpWord;
+    // Now its time for the format (GMT, BST, ...)
+    TmpWord := AIterator.GetNextWord;
+    if Length(TmpWord) > TZ_TIMEZONELETTERS_SIZE then
+      raise TTZException.CreateFmt('Format on Zone line "%s" too long. (TZ_TIMEZONELETTERS_SIZE)', [AIterator.CurrentLine]);
+    NewZone.TimeZoneLetters := TmpWord;
 
-    //And finally the UNTIL field which format is optional fields from
-    //left to right: year month day hour[s]
-    //defaults:      YEAR Jan   1   0:00:00
+    // And finally the UNTIL field which format is optional fields from
+    // left to right: year month day hour[s]
+    // defaults:      YEAR Jan   1   0:00:00
 
     // Default time form for UNTIL field in ZONE definition ***seems*** to be UTC.
     // It is not officially documented but can be extracted from examples in ZIC man page:
@@ -401,54 +408,62 @@ var
 begin
   NewRule := TTZRule.Create;
   try
-    TmpWord:=AIterator.GetNextWord;
-    if Length(TmpWord)>TZ_RULENAME_SIZE then begin
-      Raise TTZException.CreateFmt('Name on Rule line "%s" too long. (Increase source code TZ_RULENAME_SIZE)',[AIterator.CurrentLine]);
+    TmpWord := AIterator.GetNextWord;
+    if Length(TmpWord) > TZ_RULENAME_SIZE then
+      raise TTZException.CreateFmt('Name on Rule line "%s" too long. (TZ_RULENAME_SIZE)', [AIterator.CurrentLine]);
+    NewRule.Name := TmpWord;
+
+    // Begin year...
+    TmpWord := AIterator.GetNextWord;
+    NewRule.FromYear := StrToInt(TmpWord);
+
+    // End year...
+    TmpWord := AIterator.GetNextWord;
+    if TmpWord = 'only' then
+      NewRule.ToYear := NewRule.FromYear
+    else if TmpWord = 'max' then
+      NewRule.ToYear := TZ_YEAR_MAX
+    else
+      NewRule.ToYear := StrToInt(TmpWord);
+
+    // Year type (macro)
+    TmpWord := AIterator.GetNextWord;
+    if TmpWord = '-' then
+    begin
+      // No year type, so all years.
+    end
+    else
+    begin
+      // Special year... check macro...
+      // No one defined by now, so raise an exception if found.
+      raise TTZException.CreateFmt('Year type not supported in line "%s"', [AIterator.CurrentLine]);
     end;
-    NewRule.Name:=TmpWord;
-    //Begin year...
-    TmpWord:=AIterator.GetNextWord;
-    NewRule.FromYear:=StrToInt(TmpWord);
-    //End year...
-    TmpWord:=AIterator.GetNextWord;
-    if TmpWord='only' then begin
-      NewRule.ToYear:=NewRule.FromYear;
-    end else if TmpWord='max' then begin
-      NewRule.ToYear:=TZ_YEAR_MAX;
-    end else begin
-      NewRule.ToYear:=StrToInt(TmpWord);
-    end;
-    //Year type (macro)
-    TmpWord:=AIterator.GetNextWord;
-    if TmpWord='-' then begin
-      //No year type, so all years.
-    end else begin
-      //Special year... check macro...
-      //No one defined by now, so raise an exception if found.
-      Raise TTZException.CreateFmt('Year type not supported in line "%s"',[AIterator.CurrentLine]);
-    end;
-    //In month...
-    TmpWord:=AIterator.GetNextWord;
-    NewRule.InMonth:=MonthNumberFromShortName(TmpWord);
-    //On Rule...
-    TmpWord:=AIterator.GetNextWord;
-    if Length(TmpWord)>TZ_ONRULE_SIZE then begin
-      Raise TTZException.CreateFmt('ON Rule condition at "%s" too long. (Increase source code TZ_ONRULE_SIZE)',[AIterator.CurrentLine]);
-    end;
-    NewRule.OnRule:=TmpWord;
-    //AT field
-    TmpWord:=AIterator.GetNextWord;
+
+    // In month...
+    TmpWord := AIterator.GetNextWord;
+    NewRule.InMonth := MonthNumberFromShortName(TmpWord);
+
+    // On Rule...
+    TmpWord := AIterator.GetNextWord;
+    if Length(TmpWord) > TZ_ONRULE_SIZE then
+      raise TTZException.CreateFmt('ON Rule condition at "%s" too long. (TZ_ONRULE_SIZE)', [AIterator.CurrentLine]);
+    NewRule.OnRule := TmpWord;
+
+    // AT field
+    TmpWord := AIterator.GetNextWord;
     // Use WallClock time form as a default for RULE AT field.
     // ZIC man page: In the absence of an indicator, wall clock time is assumed.
     NewRule.AtHourTimeForm := ExtractTimeFormDefault(TmpWord, tztfWallClock);
-    NewRule.AtHourTime:=TimeToSeconds(TmpWord);
-    //SAVE field
-    TmpWord:=AIterator.GetNextWord;
-    NewRule.SaveTime:=TimeToSeconds(TmpWord);
-    //LETTERS field
-    NewRule.TimeZoneLetters:=AIterator.GetNextWord;
-    if NewRule.TimeZoneLetters='-' Then
-      NewRule.TimeZoneLetters:='';
+    NewRule.AtHourTime := TimeToSeconds(TmpWord);
+
+    // SAVE field
+    TmpWord := AIterator.GetNextWord;
+    NewRule.SaveTime := TimeToSeconds(TmpWord);
+
+    // LETTERS field
+    NewRule.TimeZoneLetters := AIterator.GetNextWord;
+    if NewRule.TimeZoneLetters = '-' then
+      NewRule.TimeZoneLetters := '';
   except
     FreeAndNil(NewRule);
     raise;
@@ -478,13 +493,13 @@ begin
     // "FROM" zone (link target)
     TmpWord := AIterator.GetNextWord;
     if Length(TmpWord) > TZ_ZONENAME_SIZE then
-      raise TTZException.CreateFmt('Zone link FROM name "%s" is too long. (Increase source code TZ_ZONENAME_SIZE)', [TmpWord]);
+      raise TTZException.CreateFmt('Zone link FROM name "%s" is too long. (TZ_ZONENAME_SIZE)', [TmpWord]);
     NewLink.LinkTarget := TmpWord;
 
     // "TO" zone (link name)
     TmpWord := AIterator.GetNextWord;
     if Length(TmpWord) > TZ_ZONENAME_SIZE then
-      raise TTZException.CreateFmt('Zone link TO name "%s" is too long. (Increase source code TZ_ZONENAME_SIZE)', [TmpWord]);
+      raise TTZException.CreateFmt('Zone link TO name "%s" is too long. (TZ_ZONENAME_SIZE)', [TmpWord]);
     NewLink.LinkName := TmpWord;
 
     // Check existance of "FROM" zone
@@ -762,35 +777,43 @@ begin
     Buffer := AData;
     ParseStatusTAG := '';
     ParseStatusPreviousZone := '';
-    ParseSequence:=TTzParseRule;
-    while ParseSequence<TTzParseFinish do begin
-      LineCounter:=1;
-      LineBegin:=0;
-      LineSize:=0;
-      while LineBegin<ADataSize do begin
-        if (Buffer[LineBegin+LineSize]=#13) or (Buffer[LineBegin+LineSize]=#10) then begin
+    ParseSequence := TTzParseRule;
+    while ParseSequence < TTzParseFinish do
+    begin
+      LineCounter := 1;
+      LineBegin := 0;
+      LineSize := 0;
+      while LineBegin < ADataSize do
+      begin
+        if (Buffer[LineBegin+LineSize] = #13) or (Buffer[LineBegin+LineSize] = #10) then
+        begin
           SetLength(ThisLine,LineSize);
           Move(Buffer[LineBegin],ThisLine[1],LineSize);
           ParseLine(LineCounter, ThisLine, ParseSequence);
           inc(LineBegin,LineSize);
-          LineSize:=0;
-          while (LineBegin<ADataSize) and ((Buffer[LineBegin]=#13) or (Buffer[LineBegin]=#10)) do begin
-            if Buffer[LineBegin]=#10 then begin
+          LineSize := 0;
+          while (LineBegin < ADataSize) and ((Buffer[LineBegin] = #13) or (Buffer[LineBegin] = #10)) do
+          begin
+            if Buffer[LineBegin] = #10 then
+            begin
               inc(LineCounter);
             end;
             inc(LineBegin);
           end;
-        end else begin
+        end
+        else
+        begin
           inc(LineSize);
         end;
       end;
-      if LineSize>0 then begin
+      if LineSize > 0 then
+      begin
         inc(LineCounter);
         SetLength(ThisLine,LineSize);
         Move(Buffer[LineBegin],ThisLine[1],LineSize);
         ParseLine(LineCounter, ThisLine, ParseSequence);
       end;
-      ParseSequence:=Succ(ParseSequence);
+      ParseSequence := Succ(ParseSequence);
     end;
   finally
     DatabaseChanged;
