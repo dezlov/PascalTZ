@@ -140,6 +140,7 @@ end;
 
 TTZZone=class
 public
+  // Standard zone definition attributes:
   Name: AsciiString;
   Offset: integer; //seconds
   RuleName: AsciiString;
@@ -147,13 +148,16 @@ public
   TimeZoneLetters: AsciiString;
   ValidUntilForm: TTZTimeForm;
   ValidUntil: TTZDateTime;
+  // Additionally calculated attributes:
+  ValidUntilSaveTime: Integer;
+  ValidUntilUTC: TTZDateTime;
 end;
 
 TTZZoneList = specialize TFPGObjectList<TTZZone>;
 
 TTZZoneListHelper = class helper for TTZZoneList
 public
-  procedure SortByValidUntil;
+  procedure SortByValidUntilUTC;
 end;
 
 TTZZoneGroup = class
@@ -222,14 +226,14 @@ begin
   FreeAndNil(FList);
 end;
 
-function CompareZonesByValidUntil(const ItemA, ItemB: TTZZone): Integer;
+function CompareZonesByValidUntilUTC(const ItemA, ItemB: TTZZone): Integer;
 begin
-  Result := CompareDates(ItemA.ValidUntil, ItemB.ValidUntil);
+  Result := CompareDates(ItemA.ValidUntilUTC, ItemB.ValidUntilUTC);
 end;
 
-procedure TTZZoneListHelper.SortByValidUntil;
+procedure TTZZoneListHelper.SortByValidUntilUTC;
 begin
-  Self.Sort(@CompareZonesByValidUntil);
+  Self.Sort(@CompareZonesByValidUntilUTC);
 end;
 
 constructor TTZZoneGroup.Create(const AName: AsciiString);

@@ -45,13 +45,16 @@ type
   protected
     function FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
       const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): TTZRule;
-    function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
+    function FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime;
+      const ATimeForm: TTZTimeForm): TTZZone;
     function FindZoneGroup(const AZone: AsciiString; const AIncludeLinks: Boolean): TTZZoneGroup;
     function FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
     function FindLink(const ALinkName: AsciiString): TTZLink;
     function FindZoneSaveTimeOffset(const AZone: TTZZone;
+      const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): Integer; overload;
+    function FindZoneSaveTimeOffset(const AZone: TTZZone;
       const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm;
-      out ATimeZoneAbbreviation: String): Integer;
+      out ATimeZoneAbbreviation: String): Integer; overload;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
       const ASourceTimeForm, ATargetTimeForm: TTZTimeForm): TTZDateTime; overload;
     function Convert(const ADateTime: TTZDateTime; const AZone: String;
@@ -135,16 +138,21 @@ begin
   end;
 end;
 
-function TPascalTZ.FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime): TTZZone;
+function TPascalTZ.FindZoneForDate(const AZoneList: TTZZoneList; const ADateTime: TTZDateTime;
+  const ATimeForm: TTZTimeForm): TTZZone;
 var
   Zone: TTZZone;
+  ZoneValidUntilInTargetTimeForm: TTZDateTime;
 begin
   Result := nil;
-  // Assumes that zone list is sorted by ZONE UNTIL date (regardless of time form)
+  // Assumes that zone list is sorted by ZONE UNTIL date
   for Zone in AZoneList do
   begin
-    // TODO: Need to properly use all possible time forms of ZONE UNTIL field.
-    if Zone.ValidUntil > ADateTime then
+    // Convert ZONE UNTIL date to the same time form as the date in question
+    ZoneValidUntilInTargetTimeForm := ConvertToTimeForm(Zone.ValidUntil, Zone.Offset,
+      Zone.ValidUntilSaveTime, Zone.ValidUntilForm, ATimeForm);
+    // Select first zone which is valid until some date in future past our date
+    if ZoneValidUntilInTargetTimeForm > ADateTime then
     begin
       Result := Zone;
       Break;
@@ -211,6 +219,14 @@ begin
 end;
 
 function TPascalTZ.FindZoneSaveTimeOffset(const AZone: TTZZone;
+  const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm): Integer;
+var
+  ATimeZoneAbbreviation: String; // dummy
+begin
+  Result := FindZoneSaveTimeOffset(AZone, ADateTime, ATimeForm, ATimeZoneAbbreviation);
+end;
+
+function TPascalTZ.FindZoneSaveTimeOffset(const AZone: TTZZone;
   const ADateTime: TTZDateTime; const ATimeForm: TTZTimeForm;
   out ATimeZoneAbbreviation: String): Integer;
 var
@@ -228,9 +244,7 @@ begin
 
   // No rule is applied, use fixed save time offset
   if RuleGroup = nil then
-  begin
-    Result := AZone.FixedSaveTime;
-  end
+    Result := AZone.FixedSaveTime
   // Found list of rules, now find an applicable rule
   else
   begin
@@ -599,7 +613,7 @@ begin
     raise TTZException.CreateFmt('Zone not found [%s]', [AZone]);
 
   // Find appropriate zone from the group
-  Zone := FindZoneForDate(ZoneGroup.List, ADateTime);
+  Zone := FindZoneForDate(ZoneGroup.List, ADateTime, ASourceTimeForm);
   if Zone = nil then
     raise TTZException.CreateFmt('No valid conversion rule for Zone [%s]', [AZone]);
 
@@ -611,9 +625,7 @@ begin
   end
   // Find appropriate save time offset
   else
-  begin
     SaveTimeOffset := FindZoneSaveTimeOffset(Zone, ADateTime, ASourceTimeForm, ATimeZoneAbbreviation);
-  end;
 
   // Convert to the target time form
   Result := ConvertToTimeForm(ADateTime, Zone.Offset, SaveTimeOffset, ASourceTimeForm, ATargetTimeForm);
@@ -817,11 +829,24 @@ end;
 
 procedure TPascalTZ.DatabaseChanged;
 var
+  Zone: TTZZone;
   ZoneGroup: TTZZoneGroup;
 begin
-  // Sort zone definitions by ZONE UNTIL date (regardless of time form)
+  // Calculate appropriate save time offset for ZONE UNTIL date
   for ZoneGroup in FZoneGroups do
-    ZoneGroup.List.SortByValidUntil;
+  begin
+    for Zone in ZoneGroup.List do
+    begin
+      Zone.ValidUntilSaveTime := 0;
+      if Zone.ValidUntil.Year <> TZ_YEAR_MAX then
+        Zone.ValidUntilSaveTime := FindZoneSaveTimeOffset(Zone, Zone.ValidUntil, Zone.ValidUntilForm);
+      Zone.ValidUntilUTC := ConvertToTimeForm(Zone.ValidUntil, Zone.Offset,
+        Zone.ValidUntilSaveTime, Zone.ValidUntilForm, tztfUniversal); // needed for sorting!
+    end;
+  end;
+  // Sort zone definitions by ZONE UNTIL date
+  for ZoneGroup in FZoneGroups do
+    ZoneGroup.List.SortByValidUntilUTC;
 end;
 
 procedure TPascalTZ.ClearDatabase;

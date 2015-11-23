@@ -4,6 +4,7 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+- Use time form of ZONE UNTIL field when determining applicable zone definition.
 - Sort zone definitions by ZONE UNTIL date. Ensures correct operation of the zone selection algorithm when original input is not sorted.
 - Ability to load standard files from "tzdata" package via ParseDatabaseFromStandardFiles method.
 - Recoded algorithm that searches for applicable rule. Select the most recently activated rule by comparing target date and rule begin date in UTC forms using previous save time offset. A more consistent and transparent implementation.
