@@ -35,6 +35,8 @@ function CompareDates(const ADate,BDate: TTZDateTime): integer;
 function IsGregorianLeap(const ADate: TTZDateTime): Boolean;
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
 function IsBeforeGregorianLeap(const ADate: TTZDateTime): Boolean;
+function TimeFormToChar(const ATimeForm: TTZTimeForm): AsciiChar;
+function CharToTimeForm(const AChar: AsciiChar; out ATimeForm: TTZTimeForm): Boolean;
 function ExtractTimeForm(var TimeStr: AsciiString; out TimeForm: TTZTimeForm): Boolean;
 function ExtractTimeFormDefault(var TimeStr: AsciiString; const Default: TTZTimeForm): TTZTimeForm;
 function ParseUntilFields(const AIterator: TTZLineIterate; out ATimeForm: TTZTimeForm;
@@ -57,7 +59,6 @@ function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTim
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): Integer;
 function ConvertToTimeForm(const SourceDateTime: TTZDateTime; const StandardTimeOffset, SaveTimeOffset: Integer;
   const SourceTimeForm, TargetTimeForm: TTZTimeForm): TTZDateTime;
-function TimeFormToStr(const ATimeForm: TTZTimeForm): String;
 
 operator < (const ADate, BDate: TTZDateTime): Boolean;
 operator > (const ADate, BDate: TTZDateTime): Boolean;
@@ -105,16 +106,6 @@ end;
 operator <= (const ADate, BDate: TTZDateTime): Boolean;
 begin
   Result := CompareDates(ADate, BDate) <= 0;
-end;
-
-function TimeFormToStr(const ATimeForm: TTZTimeForm): String;
-begin
-  case ATimeForm of
-    tztfWallClock: Result := 'W';
-    tztfStandard:  Result := 'S';
-    tztfUniversal: Result := 'U';
-    else           Result := '?';
-  end;
 end;
 
 function ConvertToTimeForm(const SourceSecondsInDay, StandardTimeOffset, SaveTimeOffset: Integer;
@@ -404,6 +395,29 @@ begin
     Raise TTZException.Create('Unknown day name: ' + ADayName);
 end;
 
+function TimeFormToChar(const ATimeForm: TTZTimeForm): AsciiChar;
+begin
+  case ATimeForm of
+    tztfWallClock: Result := 'w';
+    tztfStandard:  Result := 's';
+    tztfUniversal: Result := 'u';
+    else
+      Result := '?';
+  end;
+end;
+
+function CharToTimeForm(const AChar: AsciiChar; out ATimeForm: TTZTimeForm): Boolean;
+begin
+  Result := True;
+  case AChar of
+    'w':         ATimeForm := tztfWallClock;
+    's':         ATimeForm := tztfStandard;
+    'u','g','z': ATimeForm := tztfUniversal;
+    else
+      Result := False;
+  end;
+end;
+
 function ExtractTimeForm(var TimeStr: AsciiString; out TimeForm: TTZTimeForm): Boolean;
 var
   TimeFormChar: AsciiChar;
@@ -412,11 +426,7 @@ begin
   if Length(TimeStr) > 0 then
   begin
     TimeFormChar := TimeStr[Length(TimeStr)];
-    case TimeFormChar of
-      'w':         begin TimeForm := tztfWallClock; Result := True; end;
-      's':         begin TimeForm := tztfStandard;  Result := True; end;
-      'u','g','z': begin TimeForm := tztfUniversal; Result := True; end;
-    end;
+    Result := CharToTimeForm(TimeFormChar, TimeForm);
     if Result then
       Delete(TimeStr, Length(TimeStr), 1);
   end;
