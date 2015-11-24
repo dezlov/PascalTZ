@@ -46,7 +46,8 @@ function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
 function IsLeapYear(const AYear: integer): Boolean;
 function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
 function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
-function SecondsToTime(const ASeconds: Integer): String;
+function SecondsToShortTime(const ASeconds: Integer): String;
+function SecondsToTime(const ASeconds: Integer; AAllowShortTime: Boolean = False): String;
 function TimeToSeconds(const ATime: AsciiString): integer;
 function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
@@ -541,7 +542,12 @@ begin
   end;
 end;
 
-function SecondsToTime(const ASeconds: Integer): String;
+function SecondsToShortTime(const ASeconds: Integer): String;
+begin
+  Result := SecondsToTime(ASeconds, True);
+end;
+
+function SecondsToTime(const ASeconds: Integer; AAllowShortTime: Boolean = False): String;
 var
   H, M, S: Integer;  // Hours, Minutes, Seconds
 begin
@@ -550,17 +556,32 @@ begin
   Dec(S, H * 3600);
   M := S div 60;
   Dec(S, M * 60);
-  Result := IntToStr(S);
-  if S < 10 then
-    Result := '0' + Result;
-  Result := IntToStr(M) + ':' + Result;
-  if M < 10 then
-    Result := '0' + Result;
-  Result := IntToStr(H) + ':' + Result;
-  if H < 10 then
-    Result := '0' + Result;
+
+  // Negative
   if ASeconds < 0 then
-    Result := '-' + Result;
+    Result := '-'
+  else
+    Result := '';
+
+  // Hours
+  if H < 10 then
+    Result := Result + '0';
+  Result := Result + IntToStr(H);
+
+  // Minutes
+  Result := Result + ':';
+  if M < 10 then
+    Result := Result + '0';
+  Result := Result + IntToStr(M);
+
+  // Seconds (optional)
+  if not AAllowShortTime or (S <> 0) then
+  begin
+    Result := Result + ':';
+    if S < 10 then
+      Result := Result + '0';
+    Result := Result + IntToStr(S);
+  end;
 end;
 
 function TimeToSeconds(const ATime: AsciiString): integer;
