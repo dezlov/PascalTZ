@@ -87,6 +87,10 @@ const
   // in the absence of an indicator, wall clock time is assumed.
   TZ_TIME_FORM_DEFAULT = tztfWallClock;
 
+  // Delimiter of fields for stringifying Zone and Rule objects.
+  // TAB character is a commonly used field delimiter in tzdata files.
+  TZ_EXPORT_DELIM = #9;
+
 type
 TTZDateTime=record
   Year: smallint;
@@ -106,7 +110,10 @@ public
   AtHourTime: integer; //seconds
   SaveTime: integer;   //seconds
   TimeZoneLetters: AsciiString;
+public
   function GetBeginDate(const AYear: Integer): TTZDateTime;
+  function ToString: String; override; overload;
+  function ToString(const Delimeter: String): String; overload;
 end;
 
 TTZRuleList = specialize TFPGObjectList<TTZRule>;
@@ -151,6 +158,9 @@ public
   // Additionally calculated attributes:
   ValidUntilSaveTime: Integer;
   ValidUntilUTC: TTZDateTime;
+public
+  function ToString: String; override; overload;
+  function ToString(const Delimeter: String): String; overload;
 end;
 
 TTZZoneList = specialize TFPGObjectList<TTZZone>;
@@ -207,12 +217,62 @@ implementation
 uses
   uPascalTZ_Tools;
 
+function DashIfEmpty(const S: String): String; inline;
+begin
+  if Length(S) > 0 then
+    Result := S
+  else
+    Result := '-';
+end;
 
 function TTZRule.GetBeginDate(const AYear: Integer): TTZDateTime;
 begin
   Result := MakeTZDate(AYear, Self.InMonth, 1, 0);
   MacroSolver(Result, Self.OnRule);
   Result.SecsInDay := Self.AtHourTime;
+end;
+
+function TTZRule.ToString: String;
+begin
+  Result := Self.ToString(TZ_EXPORT_DELIM);
+end;
+
+function TTZRule.ToString(const Delimeter: String): String;
+var
+  ToYearStr, AtTimeStr: String;
+begin
+  // Line format:
+  // Rule, NAME, FROM, TO, TYPE, IN, ON, AT, SAVE, LETTER/S
+
+  // TO
+  if Self.ToYear = TZ_YEAR_MAX then
+    ToYearStr := 'max'
+  else if Self.ToYear = Self.FromYear then
+    ToYearStr := 'only'
+  else
+    ToYearStr := IntToStr(Self.ToYear);
+
+  // AT
+  AtTimeStr := '';
+  if (Self.AtHourTime <> 0) or (Self.AtHourTimeForm <> TZ_TIME_FORM_DEFAULT) then
+  begin
+    AtTimeStr := SecondsToShortTime(Self.AtHourTime);
+    if (Self.AtHourTimeForm <> TZ_TIME_FORM_DEFAULT) then
+      AtTimeStr := AtTimeStr + TimeFormToChar(Self.AtHourTimeForm);
+  end;
+
+  // Full line
+  Result :=
+    'Rule' + Delimeter + // Rule
+    Self.Name + Delimeter + // NAME
+    IntToStr(Self.FromYear) + Delimeter + // FROM
+    ToYearStr + Delimeter + // TO
+    '-' + Delimeter + // TYPE
+    MonthNumberToShortName(Self.InMonth) + Delimeter + // IN
+    Self.OnRule + Delimeter + // ON
+    DashIfEmpty(AtTimeStr) + Delimeter + // AT
+    SecondsToShortTime(Self.SaveTime) + Delimeter + // SAVE
+    DashIfEmpty(Self.TimeZoneLetters); // LETTER/S
 end;
 
 constructor TTZRuleGroup.Create(const AName: AsciiString);
@@ -224,6 +284,59 @@ end;
 destructor TTZRuleGroup.Destroy;
 begin
   FreeAndNil(FList);
+end;
+
+function TTZZone.ToString: String;
+begin
+  Result := Self.ToString(TZ_EXPORT_DELIM);
+end;
+
+function TTZZone.ToString(const Delimeter: String): String;
+var
+  RuleStr, UntilStr, UntilTimeStr: String;
+begin
+  // Line format:
+  // Zone, NAME, GMTOFF, RULES/SAVE, FORMAT, [UNTILYEAR [MONTH [DAY [TIME]]]]
+
+  // RULES/SAVE
+  RuleStr := '';
+  if Length(Self.RuleName) > 0 then
+    RuleStr := Self.RuleName
+  else if Self.FixedSaveTime <> 0 then
+    RuleStr := SecondsToShortTime(Self.FixedSaveTime);
+
+  // [UNTILYEAR [MONTH [DAY [TIME]]]]
+  UntilStr := '';
+  if Self.ValidUntil.Year <> TZ_YEAR_MAX then
+  begin
+    // [TIME]
+    UntilTimeStr := '';
+    if (Self.ValidUntil.SecsInDay <> 0) or (Self.ValidUntilForm <> TZ_TIME_FORM_DEFAULT) then
+    begin
+      UntilTimeStr := SecondsToShortTime(Self.ValidUntil.SecsInDay);
+      if (Self.ValidUntilForm <> TZ_TIME_FORM_DEFAULT) then
+        UntilTimeStr := UntilTimeStr + TimeFormToChar(Self.ValidUntilForm);
+    end;
+
+    // [UNTILYEAR [MONTH [DAY [TIME]]]]
+    UntilStr := IntToStr(Self.ValidUntil.Year);
+    if (Self.ValidUntil.Month <> 1) or (Self.ValidUntil.Day <> 1) or (Length(UntilTimeStr) > 0) then
+    begin
+      UntilStr := UntilStr + Delimeter +
+        MonthNumberToShortName(Self.ValidUntil.Month) + Delimeter +
+        IntToStr(Self.ValidUntil.Day) + Delimeter + UntilTimeStr;
+    end;
+  end;
+
+  // Full line
+  Result :=
+    'Zone' + Delimeter +  // Zone
+    Self.Name + Delimeter +  // NAME
+    SecondsToShortTime(Self.Offset) + Delimeter + // GMTOFF
+    DashIfEmpty(RuleStr) + Delimeter + // RULES/SAVE
+    DashIfEmpty(Self.TimeZoneLetters) + Delimeter + // FORMAT
+    UntilStr; // [UNTILYEAR [MONTH [DAY [TIME]]]]
+  Result := TrimRight(Result);
 end;
 
 function CompareZonesByValidUntilUTC(const ItemA, ItemB: TTZZone): Integer;
