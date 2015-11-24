@@ -28,7 +28,8 @@ function DateTimeToStr(const ADate: TTZDateTime): String;
 function TZDateToPascalDate(const ADate: TTZDateTime): TDateTime;
 function PascalDateToTZDate(const ADate: TDateTime): TTZDateTime;
 function MakeTZDate(const Year, Month, Day, SecsInDay: Integer): TTZDateTime; inline;
-function MonthNumberFromShortName(const AMonth: AsciiString): TTZMonth;
+function MonthNumberToShortName(const AMonthNumber: Integer): AsciiString;
+function MonthNumberFromShortName(const AMonthName: AsciiString): TTZMonth;
 function MinDate(const ADate, BDate: TTZDateTime): TTZDateTime;
 function MaxDate(const ADate, BDate: TTZDateTime): TTZDateTime;
 function CompareDates(const ADate,BDate: TTZDateTime): integer;
@@ -68,10 +69,13 @@ operator >= (const ADate, BDate: TTZDateTime): Boolean;
 operator <= (const ADate, BDate: TTZDateTime): Boolean;
 
 const
-  TTZMonthDaysCount:
-            array [TTZMonth] of TTZDay=(31,28,31,30,31,30,31,31,30,31,30,31);
-  TTZMonthDaysLeapYearCount:
-            array [TTZMonth] of TTZDay=(31,29,31,30,31,30,31,31,30,31,30,31);
+  TTZMonthDaysCount: array [TTZMonth] of TTZDay = (
+    31,28,31,30,31,30,31,31,30,31,30,31);
+  TTZMonthDaysLeapYearCount: array [TTZMonth] of TTZDay = (
+    31,29,31,30,31,30,31,31,30,31,30,31);
+  TTZShortMonthNames: array [TTZMonth] of AsciiString = (
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
 
 implementation
 
@@ -297,36 +301,22 @@ begin
   Result:=0;
 end;
 
-function MonthNumberFromShortName(const AMonth: AsciiString
-  ): TTZMonth;
+function MonthNumberToShortName(const AMonthNumber: Integer): AsciiString;
 begin
-  if AMonth='Jan' then begin
-    Result:=1;
-  end else if AMonth='Feb' then begin
-    Result:=2;
-  end else if AMonth='Mar' then begin
-    Result:=3;
-  end else if AMonth='Apr' then begin
-    Result:=4;
-  end else if AMonth='May' then begin
-    Result:=5;
-  end else if AMonth='Jun' then begin
-    Result:=6;
-  end else if AMonth='Jul' then begin
-    Result:=7;
-  end else if AMonth='Aug' then begin
-    Result:=8;
-  end else if AMonth='Sep' then begin
-    Result:=9;
-  end else if AMonth='Oct' then begin
-    Result:=10;
-  end else if AMonth='Nov' then begin
-    Result:=11;
-  end else if AMonth='Dec' then begin
-    Result:=12;
-  end else begin
-    Raise TTZException.CreateFmt('Invalid short month name "%s"',[AMonth]);
-  end;
+  if (AMonthNumber >= Low(TTZShortMonthNames)) and (AMonthNumber <= High(TTZShortMonthNames)) then
+    Result := TTZShortMonthNames[AMonthNumber]
+  else
+    raise TTZException.CreateFmt('Invalid month number "%s"', [IntToStr(AMonthNumber)]);
+end;
+
+function MonthNumberFromShortName(const AMonthName: AsciiString): TTZMonth;
+var
+  AMonthNumber: TTZMonth;
+begin
+  for AMonthNumber := Low(TTZShortMonthNames) to High(TTZShortMonthNames) do
+    if AMonthName = TTZShortMonthNames[AMonthNumber] then
+      Exit(AMonthNumber);
+  raise TTZException.CreateFmt('Invalid short month name "%s"', [AMonthName]);
 end;
 
 function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
