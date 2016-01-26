@@ -157,7 +157,7 @@ public
   ValidUntil: TTZDateTime;
   // Additionally calculated attributes:
   ValidUntilSaveTime: Integer;
-  ValidUntilUTC: TTZDateTime;
+  PreviousZone: TTZZone;
 public
   function ToString: String; override; overload;
   function ToString(const Delimeter: String): String; overload;
@@ -167,7 +167,7 @@ TTZZoneList = specialize TFPGObjectList<TTZZone>;
 
 TTZZoneListHelper = class helper for TTZZoneList
 public
-  procedure SortByValidUntilUTC;
+  procedure SortByValidUntil;
 end;
 
 TTZZoneGroup = class
@@ -339,14 +339,14 @@ begin
   Result := TrimRight(Result);
 end;
 
-function CompareZonesByValidUntilUTC(const ItemA, ItemB: TTZZone): Integer;
+function CompareZonesByValidUntil(const ItemA, ItemB: TTZZone): Integer;
 begin
-  Result := CompareDates(ItemA.ValidUntilUTC, ItemB.ValidUntilUTC);
+  Result := CompareDates(ItemA.ValidUntil, ItemB.ValidUntil);
 end;
 
-procedure TTZZoneListHelper.SortByValidUntilUTC;
+procedure TTZZoneListHelper.SortByValidUntil;
 begin
-  Self.Sort(@CompareZonesByValidUntilUTC);
+  Self.Sort(@CompareZonesByValidUntil);
 end;
 
 constructor TTZZoneGroup.Create(const AName: AsciiString);

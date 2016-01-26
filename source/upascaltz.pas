@@ -170,7 +170,7 @@ var
   DateItem: TTZDateListItem;
   DateStack: TTZDateStack;
   PreviousSaveTimeOffset: Integer;
-  IsApplicableRule: Boolean;
+  IsApplicableRule, RuleBeginsWithZone: Boolean;
 begin
   Result := nil;
   DateStack := TTZDateStack.Create(True); // FreeObjects = True
@@ -203,9 +203,38 @@ begin
       TargetDatePreviousSaveUTC := ConvertToTimeForm(ADateTime,
         AZone.Offset, PreviousSaveTimeOffset, // use previous save time
         ATimeForm, tztfUniversal);
+
       RuleBeginPreviousSaveUTC := ConvertToTimeForm(DateItem.Date,
         AZone.Offset, PreviousSaveTimeOffset, // use previous save time
         DateItem.Rule.AtHourTimeForm, tztfUniversal);
+
+      // Handle special cases when rule begin date is same as zone begin date
+      // (a.k.a. previous zone end date), meaning that rule begin date in UTC
+      // should be calculated based on previous zone offset and save time.
+      // For example: "1982-03-31 18:00" UTC to "Asia/Aqtau" time zone.
+      //   Zone 5:00    -   SHET    1981 Oct  1 # Shevchenko Time
+      //   Zone 6:00    -   SHET    1982 Apr  1
+      //   Rule RussiaAsia 1981    1984    -   Apr 1    0:00   1:00    S
+      //   Rule RussiaAsia 1981    1983    -   Oct 1    0:00   0   -
+      // UTC Time            Offset  Save Time   Local Time
+      // 1982-03-31 17:00    6:00    0:00        1982-03-31 23:00
+      // 1982-03-31 17:30    6:00    0:00        1982-03-31 23:30
+      // 1982-03-31 18:00    6:00    0:00        1982-04-01 00:00  <- old zone and no rules!
+      // 1982-03-31 18:00    5:00    1:00        1982-04-01 00:00  <- new zone and new rule!
+      // 1982-03-31 18:30    5:00    1:00        1982-04-01 00:30
+      // 1982-03-31 19:00    5:00    1:00        1982-04-01 01:00
+      if Assigned(AZone.PreviousZone) then
+      begin
+        RuleBeginsWithZone :=
+          (AZone.PreviousZone.ValidUntil = DateItem.Date) and // same date
+          (AZone.PreviousZone.ValidUntilForm = DateItem.Rule.AtHourTimeForm); // same time form
+        if RuleBeginsWithZone then
+        begin
+          RuleBeginPreviousSaveUTC := ConvertToTimeForm(DateItem.Date,
+            AZone.PreviousZone.Offset, AZone.PreviousZone.ValidUntilSaveTime,
+            DateItem.Rule.AtHourTimeForm, tztfUniversal);
+        end;
+      end;
 
       IsApplicableRule := (RuleBeginPreviousSaveUTC <= TargetDatePreviousSaveUTC);
       if IsApplicableRule then
@@ -829,24 +858,30 @@ end;
 
 procedure TPascalTZ.DatabaseChanged;
 var
-  Zone: TTZZone;
+  Zone, PreviousZone: TTZZone;
   ZoneGroup: TTZZoneGroup;
 begin
-  // Calculate appropriate save time offset for ZONE UNTIL date
   for ZoneGroup in FZoneGroups do
   begin
+    // Sort by ZONE UNTIL date (regardless of time form, we assume it won't matter)
+    ZoneGroup.List.SortByValidUntil;
+
+    // Identify previous zone for each zone in group
+    PreviousZone := nil;
+    for Zone in ZoneGroup.List do
+    begin
+      Zone.PreviousZone := PreviousZone;
+      PreviousZone := Zone;
+    end;
+
+    // Calculate appropriate save time offset for ZONE UNTIL date
     for Zone in ZoneGroup.List do
     begin
       Zone.ValidUntilSaveTime := 0;
       if Zone.ValidUntil.Year <> TZ_YEAR_MAX then
         Zone.ValidUntilSaveTime := FindZoneSaveTimeOffset(Zone, Zone.ValidUntil, Zone.ValidUntilForm);
-      Zone.ValidUntilUTC := ConvertToTimeForm(Zone.ValidUntil, Zone.Offset,
-        Zone.ValidUntilSaveTime, Zone.ValidUntilForm, tztfUniversal); // needed for sorting!
     end;
   end;
-  // Sort zone definitions by ZONE UNTIL date
-  for ZoneGroup in FZoneGroups do
-    ZoneGroup.List.SortByValidUntilUTC;
 end;
 
 procedure TPascalTZ.ClearDatabase;
