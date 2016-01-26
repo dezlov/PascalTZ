@@ -167,13 +167,13 @@ var
   RuleBeginPreviousSaveUTC: TTZDateTime;
   ApplyYear, ApplyYearMax, ApplyYearMin: Integer;
   Rule: TTZRule;
-  DateItem: TTZDateListItem;
-  DateStack: TTZDateStack;
+  RuleBegin: TTZDateListItem;
+  RuleBeginList: TTZDateList;
   PreviousSaveTimeOffset: Integer;
   IsApplicableRule, RuleBeginsWithZone: Boolean;
 begin
   Result := nil;
-  DateStack := TTZDateStack.Create(True); // FreeObjects = True
+  RuleBeginList := TTZDateList.Create(True); // FreeObjects = True
   try
     // Generate rule activation dates for the most recent and previous year.
     for Rule in ARuleList do
@@ -182,13 +182,14 @@ begin
       ApplyYearMin := Max(ApplyYearMax - 1, Rule.FromYear); // previous year (bound to rule first year)
       for ApplyYear := ApplyYearMin to ApplyYearMax do
       begin
-        DateItem := TTZDateListItem.Create(Rule, Rule.GetBeginDate(ApplyYear));
-        DateStack.Add(DateItem); // list owns the new item
+        RuleBegin := TTZDateListItem.Create(Rule,
+          Rule.GetBeginDate(ApplyYear), Rule.AtHourTimeForm);
+        RuleBeginList.Add(RuleBegin); // list owns the new item
       end;
     end;
 
     // Sort by rule activation date in ascending order.
-    DateStack.SortByDate;
+    RuleBeginList.SortByDate;
 
     // Select the most recently activated rule by comparing target date
     // and rule begin date in UTC forms using previous save time offset.
@@ -198,15 +199,15 @@ begin
     // to have a consistent and transparent operation. Other time zone libraries
     // (e.g. PHP, Howard Hinnant TZ) seem to be using a similar approach.
     PreviousSaveTimeOffset := 0;
-    for DateItem in DateStack do
+    for RuleBegin in RuleBeginList do
     begin
       TargetDatePreviousSaveUTC := ConvertToTimeForm(ADateTime,
         AZone.Offset, PreviousSaveTimeOffset, // use previous save time
         ATimeForm, tztfUniversal);
 
-      RuleBeginPreviousSaveUTC := ConvertToTimeForm(DateItem.Date,
+      RuleBeginPreviousSaveUTC := ConvertToTimeForm(RuleBegin.Date,
         AZone.Offset, PreviousSaveTimeOffset, // use previous save time
-        DateItem.Rule.AtHourTimeForm, tztfUniversal);
+        RuleBegin.TimeForm, tztfUniversal);
 
       // Handle special cases when rule begin date is same as zone begin date
       // (a.k.a. previous zone end date), meaning that rule begin date in UTC
@@ -226,24 +227,24 @@ begin
       if Assigned(AZone.PreviousZone) then
       begin
         RuleBeginsWithZone :=
-          (AZone.PreviousZone.ValidUntil = DateItem.Date) and // same date
-          (AZone.PreviousZone.ValidUntilForm = DateItem.Rule.AtHourTimeForm); // same time form
+          (AZone.PreviousZone.ValidUntil = RuleBegin.Date) and // same date
+          (AZone.PreviousZone.ValidUntilForm = RuleBegin.TimeForm); // same time form
         if RuleBeginsWithZone then
         begin
-          RuleBeginPreviousSaveUTC := ConvertToTimeForm(DateItem.Date,
+          RuleBeginPreviousSaveUTC := ConvertToTimeForm(RuleBegin.Date,
             AZone.PreviousZone.Offset, AZone.PreviousZone.ValidUntilSaveTime,
-            DateItem.Rule.AtHourTimeForm, tztfUniversal);
+            RuleBegin.TimeForm, tztfUniversal);
         end;
       end;
 
       IsApplicableRule := (RuleBeginPreviousSaveUTC <= TargetDatePreviousSaveUTC);
       if IsApplicableRule then
-        Result := DateItem.Rule;
+        Result := RuleBegin.Rule;
 
-      PreviousSaveTimeOffset := DateItem.Rule.SaveTime;
+      PreviousSaveTimeOffset := RuleBegin.Rule.SaveTime;
     end;
   finally
-    DateStack.Free;
+    RuleBeginList.Free;
   end;
 end;
 
