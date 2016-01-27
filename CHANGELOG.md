@@ -1,4 +1,4 @@
-# Changes in PascalTZ
+# Change Log
 
 This change log contains the highlights of major changes. For details on all finer changes please check the commits history.
 
