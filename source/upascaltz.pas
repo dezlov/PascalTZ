@@ -70,6 +70,8 @@ type
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
     function Convert(const ADateTime: TTZDateTime; const AFromZone, AToZone: String): TTZDateTime;
     function Convert(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime;
+    function UnixToLocalTime(const ATimestamp: Int64; const AToZone: String): TDateTime; overload;
+    function LocalTimeToUnix(const ADateTime: TDateTime; const AFromZone: String): Int64; overload;
     function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String): TTZDateTime; overload;
     function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String; out ATimeZoneAbbreviation: String): TTZDateTime; overload;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime; overload;
@@ -683,6 +685,20 @@ var
 begin
   DateTimeUTC := LocalTimeToGMT(ADateTime, AFromZone);
   Result := GMTToLocalTime(DateTimeUTC, AToZone);
+end;
+
+function TPascalTZ.UnixToLocalTime(const ATimestamp: Int64; const AToZone: String): TDateTime;
+begin
+  Result := UnixToDateTime(ATimestamp);
+  Result := GMTToLocalTime(Result, AToZone);
+end;
+
+function TPascalTZ.LocalTimeToUnix(const ADateTime: TDateTime; const AFromZone: String): Int64;
+var
+  DateTimeUTC: TDateTime;
+begin
+  DateTimeUTC := LocalTimeToGMT(ADateTime, AFromZone);
+  Result := DateTimeToUnix(DateTimeUTC);
 end;
 
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime;
