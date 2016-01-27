@@ -80,7 +80,7 @@ type
     function LocalTimeToGMT(const ADateTime: TDateTime; const AFromZone: String): TDateTime;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime; overload;
     function TimeZoneToTimeZone(const ADateTime: TDateTime; const AFromZone, AToZone: String; out ATimeZoneAbbreviation: String): TDateTime; overload;
-    procedure ParseDatabaseFromStandardFiles(const ADirectory: String);
+    procedure ParseDatabaseFromDirectory(const ADirectory: String);
     procedure ParseDatabaseFromFile(const AFileName: String);
     procedure ParseDatabaseFromFiles(const AFileNames: array of String; const AFilePathPrefix: String = '');
     procedure ParseDatabaseFromString(const AString: String);
@@ -767,7 +767,7 @@ begin
   Result := TZDateToPascalDate(Tmp);
 end;
 
-procedure TPascalTZ.ParseDatabaseFromStandardFiles(const ADirectory: String);
+procedure TPascalTZ.ParseDatabaseFromDirectory(const ADirectory: String);
 var
   TargetDirPath: String;
 begin
