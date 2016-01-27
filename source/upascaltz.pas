@@ -68,8 +68,8 @@ type
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStrings; const AIncludeLinks: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
-    function Convert(const ADateTime: TTZDateTime; const AFromZone, AToZone: String): TTZDateTime;
-    function Convert(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime;
+    function Convert(const ADateTime: TTZDateTime; const AFromZone, AToZone: String): TTZDateTime; overload;
+    function Convert(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime; overload;
     function UnixToLocalTime(const ATimestamp: Int64; const AToZone: String): TDateTime; overload;
     function LocalTimeToUnix(const ADateTime: TDateTime; const AFromZone: String): Int64; overload;
     function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String): TTZDateTime; overload;
