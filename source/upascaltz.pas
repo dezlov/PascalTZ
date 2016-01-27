@@ -68,7 +68,10 @@ type
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStrings; const AIncludeLinks: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
-    function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String; out ATimeZoneAbbreviation: String): TTZDateTime;
+    function Convert(const ADateTime: TTZDateTime; const AFromZone, AToZone: String): TTZDateTime;
+    function Convert(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime;
+    function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String): TTZDateTime; overload;
+    function GMTToLocalTime(const ADateTime: TTZDateTime; const AToZone: String; out ATimeZoneAbbreviation: String): TTZDateTime; overload;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime; overload;
     function GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String; out ATimeZoneAbbreviation: String): TDateTime; overload;
     function LocalTimeToGMT(const ADateTime: TTZDateTime; const AFromZone: String): TTZDateTime;
@@ -666,6 +669,22 @@ begin
       raise TTZException.CreateFmt('The time %s does not exist in %s', [DateTimeToStr(ADateTime), AZone]);
 end;
 
+function TPascalTZ.Convert(const ADateTime: TTZDateTime; const AFromZone, AToZone: String): TTZDateTime;
+var
+  DateTimeUTC: TTZDateTime;
+begin
+  DateTimeUTC := LocalTimeToGMT(ADateTime, AFromZone);
+  Result := GMTToLocalTime(DateTimeUTC, AToZone);
+end;
+
+function TPascalTZ.Convert(const ADateTime: TDateTime; const AFromZone, AToZone: String): TDateTime;
+var
+  DateTimeUTC: TDateTime;
+begin
+  DateTimeUTC := LocalTimeToGMT(ADateTime, AFromZone);
+  Result := GMTToLocalTime(DateTimeUTC, AToZone);
+end;
+
 function TPascalTZ.GMTToLocalTime(const ADateTime: TDateTime; const AToZone: String): TDateTime;
 var
   ATimeZoneAbbreviation: String; // dummy
@@ -687,6 +706,14 @@ function TPascalTZ.GMTToLocalTime(const ADateTime: TTZDateTime;
   const AToZone: String; out ATimeZoneAbbreviation: String): TTZDateTime;
 begin
   Result := Convert(ADateTime, AToZone, tztfUniversal, tztfWallClock, ATimeZoneAbbreviation);
+end;
+
+function TPascalTZ.GMTToLocalTime(const ADateTime: TTZDateTime;
+  const AToZone: String): TTZDateTime;
+var
+  ATimeZoneAbbreviation: String;
+begin
+  Result := GMTToLocalTime(ADateTime, AToZone, ATimeZoneAbbreviation);
 end;
 
 function TPascalTZ.LocalTimeToGMT(const ADateTime: TDateTime;

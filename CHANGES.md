@@ -4,6 +4,7 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+- Added `Convert` method for converting between two specific time zones.
 - Handle special cases when rule begin date is same as zone begin date (a.k.a. previous zone end date), meaning that rule begin date in UTC should be calculated based on previous zone offset and save time.
 - Added ToString methods for stringifying Zone and Rule objects.
 - Use time form of ZONE UNTIL field when determining applicable zone definition.
