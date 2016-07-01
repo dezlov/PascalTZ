@@ -62,12 +62,6 @@ const
   TZ_TIMEZONELETTERS_SIZE=8;
   TZ_ONRULE_SIZE=7;
 
-  TZ_SECONDSIN_MINUTE=60;
-  TZ_SECONDSIN_HOUR=TZ_SECONDSIN_MINUTE*60;
-  TZ_SECONDSIN_DAY=TZ_SECONDSIN_HOUR*24;
-
-  TZ_YEAR_MAX = 9999;
-
 type
   PAsciiChar=^AsciiChar;
   AsciiChar=AnsiChar;
@@ -82,6 +76,9 @@ type
   TTZTimeForm=(tztfWallClock, tztfStandard, tztfUniversal);
 
 const
+  // Used for identifying unspecified dates in future, i.e. "max" keyword in rules.
+  TZ_YEAR_MAX = 9999;
+
   // ZIC man page:
   // For RULE IN/ON/AT fields and ZONE UNTIL fields,
   // in the absence of an indicator, wall clock time is assumed.
