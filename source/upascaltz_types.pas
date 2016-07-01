@@ -57,23 +57,25 @@ const
   //   "America/Argentina/Buenos_Aires"
   //   "America/Argentina/Rio_Gallegos"
   //   "America/North_Dakota/New_Salem"
-  TZ_RULENAME_SIZE=12;
-  TZ_ZONENAME_SIZE=32; // max 32 characters is 'backward' compatible!
-  TZ_TIMEZONELETTERS_SIZE=8;
-  TZ_ONRULE_SIZE=7;
+  TZ_RULENAME_SIZE = 12;
+  TZ_ZONENAME_SIZE = 32; // max 32 characters is 'backward' compatible!
+  TZ_TIMEZONELETTERS_SIZE = 8;
+  TZ_ONRULE_SIZE = 7;
 
 type
-  PAsciiChar=^AsciiChar;
-  AsciiChar=AnsiChar;
-  AsciiString=AnsiString;
-  TParseSequence=(TTzParseRule,TTzParseZone,TTzParseLink,TTzParseFinish);
-  TTZMonth=  1..12;
-  TTZDay=    1..31;
-  TTZHour=   0..23;
-  TTZMinute= 0..59;
-  TTZSecond= 0..59;
-  TTZWeekDay=(eTZSunday=1,eTZMonday,eTZTuesday,eTZWednesday,eTZThursday,eTZFriday,eTZSaturday);
-  TTZTimeForm=(tztfWallClock, tztfStandard, tztfUniversal);
+  PAsciiChar = ^AsciiChar;
+  AsciiChar = AnsiChar;
+  AsciiString = AnsiString;
+  TParseSequence = (TTzParseRule, TTzParseZone, TTzParseLink, TTzParseFinish);
+
+  TTZMonth  = 1..12;
+  TTZDay    = 1..31;
+  TTZHour   = 0..23;
+  TTZMinute = 0..59;
+  TTZSecond = 0..59;
+
+  TTZWeekDay = (eTZSunday=1, eTZMonday, eTZTuesday, eTZWednesday, eTZThursday, eTZFriday, eTZSaturday);
+  TTZTimeForm = (tztfWallClock, tztfStandard, tztfUniversal);
 
 const
   // Used for identifying unspecified dates in future, i.e. "max" keyword in rules.
@@ -89,126 +91,122 @@ const
   TZ_EXPORT_DELIM = #9;
 
 type
-TTZDateTime=record
-  Year: smallint;
-  Month: BYTE;
-  Day: BYTE;
-  SecsInDay: integer;
-end;
+  TTZDateTime=record
+    Year: smallint;
+    Month: BYTE;
+    Day: BYTE;
+    SecsInDay: integer;
+  end;
 
-TTZRule=class
-public
-  Name: AsciiString;
-  FromYear: integer;
-  ToYear: integer;
-  InMonth: BYTE;
-  OnRule: AsciiString;
-  AtHourTimeForm: TTZTimeForm;
-  AtHourTime: integer; //seconds
-  SaveTime: integer;   //seconds
-  TimeZoneLetters: AsciiString;
-public
-  function GetBeginDate(const AYear: Integer): TTZDateTime;
-  function ToString: String; override; overload;
-  function ToString(const Delimeter: String): String; overload;
-end;
+  TTZRule=class
+  public
+    Name: AsciiString;
+    FromYear: integer;
+    ToYear: integer;
+    InMonth: BYTE;
+    OnRule: AsciiString;
+    AtHourTimeForm: TTZTimeForm;
+    AtHourTime: integer; //seconds
+    SaveTime: integer;   //seconds
+    TimeZoneLetters: AsciiString;
+  public
+    function GetBeginDate(const AYear: Integer): TTZDateTime;
+    function ToString: String; override; overload;
+    function ToString(const Delimeter: String): String; overload;
+  end;
 
-TTZRuleList = specialize TFPGObjectList<TTZRule>;
+  TTZRuleList = specialize TFPGObjectList<TTZRule>;
 
-TTZRuleGroup = class
-private
-  FList: TTZRuleList;
-  FName: AsciiString;
-public
-  constructor Create(const AName: AsciiString);
-  destructor Destroy; override;
-  property List: TTZRuleList read FList;
-  property Name: AsciiString read FName write FName;
-end;
+  TTZRuleGroup = class
+  private
+    FList: TTZRuleList;
+    FName: AsciiString;
+  public
+    constructor Create(const AName: AsciiString);
+    destructor Destroy; override;
+    property List: TTZRuleList read FList;
+    property Name: AsciiString read FName write FName;
+  end;
 
-TTZRuleGroupList = specialize TFPGObjectList<TTZRuleGroup>;
+  TTZRuleGroupList = specialize TFPGObjectList<TTZRuleGroup>;
 
-TTZDateListItem=class
-public
-  Rule: TTZRule;
-  Date: TTZDateTime;
-  TimeForm: TTZTimeForm;
-  constructor Create(const ARule: TTZRule; const ADate: TTZDateTime;
-    const ATimeForm: TTZTimeForm);
-end;
+  TTZDateListItem=class
+  public
+    Rule: TTZRule;
+    Date: TTZDateTime;
+    TimeForm: TTZTimeForm;
+    constructor Create(const ARule: TTZRule; const ADate: TTZDateTime;
+      const ATimeForm: TTZTimeForm);
+  end;
 
-TTZDateList = specialize TFPGObjectList<TTZDateListItem>;
+  TTZDateList = specialize TFPGObjectList<TTZDateListItem>;
 
-TTZDateListHelper = class helper for TTZDateList
-public
-  procedure SortByDate;
-end;
+  TTZDateListHelper = class helper for TTZDateList
+  public
+    procedure SortByDate;
+  end;
 
-TTZZone=class
-public
-  // Standard zone definition attributes:
-  Name: AsciiString;
-  Offset: integer; //seconds
-  RuleName: AsciiString;
-  FixedSaveTime: integer; //seconds
-  TimeZoneLetters: AsciiString;
-  ValidUntilForm: TTZTimeForm;
-  ValidUntil: TTZDateTime;
-  // Additionally calculated attributes:
-  ValidUntilSaveTime: Integer;
-  PreviousZone: TTZZone;
-public
-  function ToString: String; override; overload;
-  function ToString(const Delimeter: String): String; overload;
-end;
+  TTZZone=class
+  public
+    // Standard zone definition attributes:
+    Name: AsciiString;
+    Offset: integer; //seconds
+    RuleName: AsciiString;
+    FixedSaveTime: integer; //seconds
+    TimeZoneLetters: AsciiString;
+    ValidUntilForm: TTZTimeForm;
+    ValidUntil: TTZDateTime;
+    // Additionally calculated attributes:
+    ValidUntilSaveTime: Integer;
+    PreviousZone: TTZZone;
+  public
+    function ToString: String; override; overload;
+    function ToString(const Delimeter: String): String; overload;
+  end;
 
-TTZZoneList = specialize TFPGObjectList<TTZZone>;
+  TTZZoneList = specialize TFPGObjectList<TTZZone>;
 
-TTZZoneListHelper = class helper for TTZZoneList
-public
-  procedure SortByValidUntil;
-end;
+  TTZZoneListHelper = class helper for TTZZoneList
+  public
+    procedure SortByValidUntil;
+  end;
 
-TTZZoneGroup = class
-private
-  FList: TTZZoneList;
-  FName: AsciiString;
-public
-  constructor Create(const AName: AsciiString);
-  destructor Destroy; override;
-  property List: TTZZoneList read FList;
-  property Name: AsciiString read FName write FName;
-end;
+  TTZZoneGroup = class
+  private
+    FList: TTZZoneList;
+    FName: AsciiString;
+  public
+    constructor Create(const AName: AsciiString);
+    destructor Destroy; override;
+    property List: TTZZoneList read FList;
+    property Name: AsciiString read FName write FName;
+  end;
 
-TTZZoneGroupList = specialize TFPGObjectList<TTZZoneGroup>;
+  TTZZoneGroupList = specialize TFPGObjectList<TTZZoneGroup>;
 
-TTZLink=class
-public
-  LinkTarget: AsciiString; // existing zone name
-  LinkName: AsciiString; // alternative zone name
-end;
+  TTZLink=class
+  public
+    LinkTarget: AsciiString; // existing zone name
+    LinkName: AsciiString; // alternative zone name
+  end;
 
-TTZLinkList = specialize TFPGObjectList<TTZLink>;
+  TTZLinkList = specialize TFPGObjectList<TTZLink>;
 
-{ TTZLineIterate }
+  TTZLineIterate = class(TObject)
+  private
+    Position: integer;
+    Line: AsciiString;
+    LineSize: Integer;
+  protected
+    FIterateChar: AsciiChar;
+  public
+    property IterateChar: AsciiChar read FIterateChar write FIterateChar;
+    property CurrentLine: AsciiString read Line;
+    function GetNextWord: AsciiString;
+    constructor Create(const ALine: AsciiString; const AIterateChar: AsciiChar=#32);
+  end;
 
-TTZLineIterate = class(TObject)
-private
-  Position: integer;
-  Line: AsciiString;
-  LineSize: Integer;
-protected
-  FIterateChar: AsciiChar;
-public
-  property IterateChar: AsciiChar read FIterateChar write FIterateChar;
-  property CurrentLine: AsciiString read Line;
-  function GetNextWord: AsciiString;
-  constructor Create(const ALine: AsciiString; const AIterateChar: AsciiChar=#32);
-end;
-
-{ TExceptionTZ }
-
-TTZException = class(Exception);
+  TTZException = class(Exception);
 
 
 implementation
