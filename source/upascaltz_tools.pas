@@ -232,20 +232,21 @@ end;
 
 procedure FixUpTime(var ADate: TTZDateTime);
 var
-  Days: integer;
+  Days: Integer;
 begin
-  if ADate.SecsInDay<0 then begin
-    //Decrease some day(s)
-    Days:=ADate.SecsInDay div (3600*24); // negative days
-    if ADate.SecsInDay mod (3600*24) < 0 then
-      Days := Days - 1;
-    ADate:=IncDays(ADate,Days); // negative days
-    ADate.SecsInDay:=ADate.SecsInDay-Days*3600*24; // double negative days => positive
-  end else if ADate.SecsInDay>=(3600*24) then begin
-    //Increase some day(s)
-    Days:=ADate.SecsInDay div (3600*24);
-    ADate:=IncDays(ADate,Days);
-    ADate.SecsInDay:=ADate.SecsInDay-Days*3600*24;
+  if (ADate.SecsInDay < 0) or (ADate.SecsInDay >= (3600*24)) then
+  begin
+    Days := ADate.SecsInDay div (3600*24);
+    if ADate.SecsInDay < 0 then
+    begin
+      if ADate.SecsInDay mod (3600*24) < 0 then
+        Dec(Days);
+    end;
+    if Days <> 0 then
+    begin
+      ADate := IncDays(ADate, Days);
+      Dec(ADate.SecsInDay, Days * (3600*24))
+    end;
   end;
 end;
 
