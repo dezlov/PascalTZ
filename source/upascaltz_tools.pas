@@ -32,7 +32,7 @@ function MonthNumberToShortName(const AMonthNumber: Integer): AsciiString;
 function MonthNumberFromShortName(const AMonthName: AsciiString): TTZMonth;
 function MinDate(const ADate, BDate: TTZDateTime): TTZDateTime;
 function MaxDate(const ADate, BDate: TTZDateTime): TTZDateTime;
-function CompareDates(const ADate,BDate: TTZDateTime): integer;
+function CompareDates(const ADate,BDate: TTZDateTime): Integer;
 function IsGregorianLeap(const ADate: TTZDateTime): Boolean;
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
 function IsBeforeGregorianLeap(const ADate: TTZDateTime): Boolean;
@@ -189,45 +189,43 @@ begin
   Result := StringReplace(Result, '%s', ARuleLetters, [rfReplaceAll, rfIgnoreCase]);
 
   // When timezonename is XXX/YYY, XXX is no daylight and YYY is daylight saving.
-  ZoneNameCut:=Pos('/',Result);
-  if ZoneNameCut>0 then
+  ZoneNameCut := Pos('/', Result);
+  if ZoneNameCut > 0 then
   begin
     if not IsDST then
       // Use the XXX
-      Result:=Copy(Result,1,ZoneNameCut-1)
+      Result := Copy(Result, 1, ZoneNameCut - 1)
     else
       // Use the YYY
-      Result:=Copy(Result,ZoneNameCut+1,Length(Result)-ZoneNameCut);
+      Result := Copy(Result, ZoneNameCut + 1, Length(Result) - ZoneNameCut);
   end;
 end;
 
 procedure IsGregorianLeapException(const ADate: TTZDateTime);
 begin
-  if IsGregorianLeap(ADate) Then begin
-    Raise TTZException.CreateFmt('Gregorian Leap, date does not exists. [%.4d.%.2d.%.2d]',[ADate.Year,ADate.Month,ADate.Day])
-  end;
+  if IsGregorianLeap(ADate) then
+    raise TTZException.CreateFmt('Gregorian Leap, date does not exist. [%.4d.%.2d.%.2d]',
+      [ADate.Year, ADate.Month, ADate.Day]);
 end;
 
 function IsGregorianLeap(const ADate: TTZDateTime): Boolean;
 begin
-  Result:=false;
-  if (ADate.Year=1582) and (ADate.Month=10) then begin
-    if (ADate.Day>4) and (ADate.Day<15) Then begin
-      Result:=true;
-    end;
-  end;
+  Result := False;
+  if (ADate.Year = 1582) and (ADate.Month = 10) then
+    if (ADate.Day > 4) and (ADate.Day < 15) then
+      Result := True;
 end;
 
 function IsBeforeGregorianLeap(const ADate: TTZDateTime): Boolean;
 begin
-  if ADate.Year<1582 then Exit(true);
-  if ADate.Year>1582 then Exit(false);
+  if ADate.Year < 1582 then Exit(True);
+  if ADate.Year > 1582 then Exit(False);
   //Now Year is 1582 :)
-  if ADate.Month<10 then Exit(true);
-  if ADate.Month>10 then Exit(false);
+  if ADate.Month < 10 then Exit(True);
+  if ADate.Month > 10 then Exit(False);
   //Now year 1582 and month 10
-  if ADate.Day<=4 Then Exit (true);
-  Result:=false;
+  if ADate.Day <= 4 Then Exit(True);
+  Result := False;
 end;
 
 procedure FixUpTime(var ADate: TTZDateTime);
@@ -253,14 +251,14 @@ end;
 procedure DateTimeToTime(const ADate: TTZDateTime; out AHour,
   AMinute, ASecond: BYTE);
 var
-  Temp: integer;
+  Temp: Integer;
 begin
-  Temp:=ADate.SecsInDay;
-  AHour:=ADate.SecsInDay div 3600;
-  Dec(Temp,AHour*3600);
-  AMinute:=Temp div 60;
-  Dec(Temp,AMinute*60);
-  ASecond:=Temp;
+  Temp := ADate.SecsInDay;
+  AHour := ADate.SecsInDay div 3600;
+  Dec(Temp, AHour*3600);
+  AMinute := Temp div 60;
+  Dec(Temp, AMinute*60);
+  ASecond := Temp;
 end;
 
 function MinDate(const ADate, BDate: TTZDateTime): TTZDateTime;
@@ -279,29 +277,30 @@ begin
     Result := BDate;
 end;
 
-function CompareDates(const ADate, BDate: TTZDateTime): integer;
+function CompareDates(const ADate, BDate: TTZDateTime): Integer;
 begin
-  if ADate.Year>BDate.Year then begin
-    Exit(1);
-  end else if ADate.Year<BDate.Year then begin
+  // Year
+  if ADate.Year > BDate.Year then
+    Exit(1)
+  else if ADate.Year < BDate.Year then
     Exit(-1);
-  end;
-  if ADate.Month>BDate.Month then begin
-    Exit(1);
-  end else if ADate.Month<BDate.Month then begin
+  // Month
+  if ADate.Month > BDate.Month then
+    Exit(1)
+  else if ADate.Month < BDate.Month then
     Exit(-1);
-  end;
-  if ADate.Day>BDate.Day then begin
-    Exit(1);
-  end else if ADate.Day<BDate.Day then begin
+  // Day
+  if ADate.Day > BDate.Day then
+    Exit(1)
+  else if ADate.Day < BDate.Day then
     Exit(-1);
-  end;
-  if ADate.SecsInDay>BDate.SecsInDay then begin
-    Exit(1);
-  end else if ADate.SecsInDay<BDate.SecsInDay then begin
+  // SecsInDay
+  if ADate.SecsInDay > BDate.SecsInDay then
+    Exit(1)
+  else if ADate.SecsInDay < BDate.SecsInDay then
     Exit(-1);
-  end;
-  Result:=0;
+  // Same
+  Result := 0;
 end;
 
 function MonthNumberToShortName(const AMonthNumber: Integer): AsciiString;
@@ -324,42 +323,44 @@ end;
 
 function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
 var
-  TempYear: integer;
-  FirstDayOfYear: integer;
-  j: integer;
-  DaysAD: integer;
+  TempYear: Integer;
+  FirstDayOfYear: Integer;
+  j: Integer;
+  DaysAD: Integer;
 begin
   IsGregorianLeapException(ADate);
-  TempYear:=ADate.Year-1;
+  TempYear := ADate.Year - 1;
   //Is date before Gregory Pope change ?
 
-  if IsBeforeGregorianLeap(ADate) then begin
-    FirstDayOfYear:= 6+TempYear+(TempYear div 4);
-  end else begin
+  if IsBeforeGregorianLeap(ADate) then
+    FirstDayOfYear:= 6+TempYear+(TempYear div 4)
+  else
     FirstDayOfYear:= 1+TempYear+(TempYear div 4)-(TempYear div 100)+(TempYear div 400);
+
+  DaysAD := FirstDayOfYear;
+  if IsLeapYear(ADate.Year) then
+  begin
+    for j := 1 to ADate.Month-1 do
+      Inc(DaysAD,TTZMonthDaysLeapYearCount[j]);
+  end
+  else
+  begin
+    for j := 1 to ADate.Month-1 do
+      Inc(DaysAD, TTZMonthDaysCount[j]);
   end;
-  DaysAD:=FirstDayOfYear;
-  if IsLeapYear(ADate.Year) Then begin
-    for j := 1 to ADate.Month-1 do begin
-      inc(DaysAD,TTZMonthDaysLeapYearCount[j]);
-    end;
-  end else begin
-    for j := 1 to ADate.Month-1 do begin
-      inc(DaysAD,TTZMonthDaysCount[j]);
-    end;
-  end;
-  inc(DaysAD,ADate.Day-1);
-  Result:=TTZWeekDay((DaysAD mod 7)+1);
+  Inc(DaysAD, ADate.Day-1);
+  Result := TTZWeekDay((DaysAD mod 7)+1);
 end;
 
 function IsLeapYear(const AYear: integer): Boolean;
 begin
-  if AYear>1582 then begin
-    if (AYear mod 400)=0 Then Exit(true); //All years every 400 years are leap years.
-    if (AYear mod 100)=0 then Exit(false); //Centuries are not leap years (except previous % 400)
+  if AYear > 1582 then
+  begin
+    if (AYear mod 400) = 0 Then Exit(True); // All years every 400 years are leap years.
+    if (AYear mod 100) = 0 then Exit(False); // Centuries are not leap years (except previous % 400)
   end;
-  if (AYear mod 4)=0 then exit(true); //Each 4 years a leap year comes in play.
-  Result:=false;
+  if (AYear mod 4) = 0 then Exit(True); // Each 4 years a leap year comes in play.
+  Result := False;
 end;
 
 function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
@@ -436,38 +437,42 @@ function ParseUntilFields(const AIterator: TTZLineIterate;
 var
   TmpWord: AsciiString;
 begin
-  //Default Values...
+  // Default values
   Result := MakeTZDate(TZ_YEAR_MAX, 1, 1, 0);
-  ATimeForm:=ADefaultTimeForm;
+  ATimeForm := ADefaultTimeForm;
 
-  TmpWord:=AIterator.GetNextWord;
-  if TmpWord='' Then Exit;
+  // Year
+  TmpWord := AIterator.GetNextWord;
+  if TmpWord = '' then Exit;
   try
     Result.Year:=StrToInt(TmpWord);
-  except
-  On E: Exception do begin
-          Raise TTZException.Create('Invalid date in "until" fields');
-        end;
-  end;
-  TmpWord:=AIterator.GetNextWord;
-  if TmpWord='' Then Exit;
-  Result.Month:=MonthNumberFromShortName(TmpWord);
-  TmpWord:=AIterator.GetNextWord;
-  if TmpWord='' then Exit;
-  Result.Day:=StrToIntDef(TmpWord,0);
-  if Result.Day=0 then begin
-    //Not a number...
-    //Try using macros...
-    MacroSolver(Result,TmpWord);
+  except on E: Exception do
+    raise TTZException.Create('Invalid date in "until" fields');
   end;
 
-  TmpWord:=AIterator.GetNextWord;
-  if TmpWord='' then Exit;
+  // Month
+  TmpWord := AIterator.GetNextWord;
+  if TmpWord = '' Then Exit;
+  Result.Month := MonthNumberFromShortName(TmpWord);
 
+  // Day
+  TmpWord := AIterator.GetNextWord;
+  if TmpWord = '' then Exit;
+  Result.Day := StrToIntDef(TmpWord, 0);
+
+  // Day is not a number, try to resolve macro
+  if Result.Day = 0 then
+    MacroSolver(Result, TmpWord);
+
+  // Seconds
+  TmpWord := AIterator.GetNextWord;
+  if TmpWord = '' then Exit;
   ATimeForm := ExtractTimeFormDefault(TmpWord, ADefaultTimeForm);
-  Result.SecsInDay:=TimeToSeconds(TmpWord);
+  Result.SecsInDay := TimeToSeconds(TmpWord);
 end;
 
+// This function check for some macros to specify a given day
+// in a month and a year, like "lastSun" or "Mon>=15".
 procedure MacroSolver(var ADate: TTZDateTime;
   const ADayString: AsciiString);
 var
@@ -478,70 +483,85 @@ var
   ConditionA,ConditionOp,ConditionB: AsciiString;
   WeekDay: TTZWeekDay;
 begin
-  //First check regular number...
+  // Check if it is a regular number
   j:=StrToIntDef(ADayString,-1);
-  if j<>-1 then begin
+  if j<>-1 then
+  begin
     ADate.Day:=j;
     Exit;
   end;
 
-  //This function check for some macros to specify a given day in a
-  //month and a year, like "lastSun" or "Mon>=15"
-
-  //First check if it is a conditional macro
+  // Check if it is a conditional macro
   ConditionalMacro:=false;
   ConditionalBegin:=0;
   ConditionalEnd:=0;
-  for j := 1 to Length(ADayString) do begin
-    if ADayString[j] in ['<','=','>'] then begin
+  for j := 1 to Length(ADayString) do
+  begin
+    if ADayString[j] in ['<','=','>'] then
+    begin
       ConditionalMacro:=true;
       ConditionalBegin:=j;
-      for k := j+1 to Length(ADayString) do begin
-        if not (ADayString[k] in ['<','=','>']) then begin
+      for k := j+1 to Length(ADayString) do
+      begin
+        if not (ADayString[k] in ['<','=','>']) then
+        begin
           ConditionalEnd:=k;
           Break;
         end;
       end;
-      break;
+      Break;
     end;
   end;
-  if ConditionalMacro then begin
-    if (ConditionalEnd=0) or (ConditionalBegin=0) then begin
-      Raise TTZException.Create('Macro expansion not possible: Unrecognised conditional part');
-    end;
+
+  if ConditionalMacro then
+  begin
+    if (ConditionalEnd=0) or (ConditionalBegin=0) then
+      raise TTZException.Create('Macro expansion not possible: Unrecognised conditional part');
     ConditionA:=Copy(ADayString,1,ConditionalBegin-1);
     ConditionOp:=Copy(ADayString,ConditionalBegin,ConditionalEnd-ConditionalBegin);
     ConditionB:=Copy(ADayString,ConditionalEnd,Length(ADayString)-ConditionalEnd+1);
     WeekDay:=DayNameToNumber(ConditionA);
     j:=StrToInt(ConditionB);
-    if ConditionOp='>' then begin
+    if ConditionOp='>' then
+    begin
       ADate.Day:=j+1;
       ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
-    end else if ConditionOp='>=' then begin
+    end
+    else if ConditionOp='>=' then
+    begin
       ADate.Day:=j;
       ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
-    end else if ConditionOp='<' then begin
+    end
+    else if ConditionOp='<' then
+    begin
       ADate.Day:=j-1;
       ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
-    end else if ConditionOp='<=' then begin
+    end
+    else if ConditionOp='<=' then
+    begin
       ADate.Day:=j;
       ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
-    end else begin
-      Raise TTZException.Create('Macro expansion not possible: Unknown condition operator');
-    end;
-  end else begin
-    //It is not a conditional macro, so it could be firstXXX or lastXXX
-    if LeftStr(ADayString,5)='first' then begin
+    end
+    else
+      raise TTZException.Create('Macro expansion not possible: Unknown condition operator');
+  end
+  else
+  begin
+    // It is not a conditional macro, so it could be firstXXX or lastXXX
+    if LeftStr(ADayString,5)='first' then
+    begin
       WeekDay:=DayNameToNumber(Copy(ADayString,6,Length(ADayString)-5));
       ADate.Day:=Low(TTZDay);
       ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
-    end else if LeftStr(ADayString,4)='last' then begin
+    end
+    else if LeftStr(ADayString,4)='last' then
+    begin
       WeekDay:=DayNameToNumber(Copy(ADayString,5,Length(ADayString)-4));
       ADate.Day:=High(TTZDay);
       ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
-    end else begin
-      Raise TTZException.Create('Macro expansion not possible: Unrecognised macro');
-    end;
+    end
+    else
+      raise TTZException.Create('Macro expansion not possible: Unrecognised macro');
   end;
 end;
 
@@ -598,54 +618,62 @@ var
   Minutes: TTZMinute;
   Seconds: TTZSecond;
 begin
-  //Time could be expressed in:
-  // [-]h = hours
-  // [-]h:m = hours:minutes
-  // [-]h:m:s = hours:minutes:seconds
-  //So count the amount of ':' to get the format
+  // Time could be expressed in:
+  //   [-]h = hours
+  //   [-]h:m = hours:minutes
+  //   [-]h:m:s = hours:minutes:seconds
+  // So count the amount of ':' to get the format
 
-  if ATime[1]='-' Then begin
+  if ATime[1]='-' then
+  begin
     Sign:=-1; //Negative seconds...
     TmpTime:=Copy(ATime,2,Length(ATime)-1);
-  end else begin
+  end
+  else
+  begin
     Sign:=1;  //Positive seconds...
     TmpTime:=ATime;
   end;
+
   TwoColons:=0;
-  for j := 1 to Length(TmpTime) do begin
-    if TmpTime[j]=':' then begin
-      inc(TwoColons);
-    end;
+  for j := 1 to Length(TmpTime) do
+  begin
+    if TmpTime[j] = ':' then
+      Inc(TwoColons);
   end;
+
   case TwoColons of
-    0:  begin //Format is "h"
+    // Format is "h"
+    0:  begin
           Result:=StrToInt(TmpTime)*3600;
         end;
-    1:  begin //Format is "hh:mm"
+    // Format is "hh:mm"
+    1:  begin
           TimeIterator:=TTZLineIterate.Create(TmpTime,':');
           try
             Hours:=StrToInt(TimeIterator.GetNextWord);
             Minutes:=StrToInt(TimeIterator.GetNextWord);
             Result:=Hours*3600+Minutes*60;
-          except
-          On E: Exception do begin
+          except on E: Exception do
+            begin
               TimeIterator.Free;
-              Raise TTZException.Create('Failed to parse time: ' + ATime);
+              raise TTZException.Create('Failed to parse time: ' + ATime);
             end;
           end;
           TimeIterator.Free;
         end;
-    2:  begin //Format is "hh:mm:ss"
+    // Format is "hh:mm:ss"
+    2:  begin
           TimeIterator:=TTZLineIterate.Create(TmpTime,':');
           try
             Hours:=StrToInt(TimeIterator.GetNextWord);
             Minutes:=StrToInt(TimeIterator.GetNextWord);
             Seconds:=StrToInt(TimeIterator.GetNextWord);
             Result:=Hours*3600+Minutes*60+Seconds;
-          except
-          On E: Exception do begin
+          except on E: Exception do
+            begin
               TimeIterator.Free;
-              Raise TTZException.Create('Failed to parse time: ' + ATime);
+              raise TTZException.Create('Failed to parse time: ' + ATime);
             end;
           end;
           TimeIterator.Free;
@@ -653,73 +681,83 @@ begin
     else
         begin
           TimeIterator.Free;
-          Raise TTZException.Create('Failed to parse time: ' + ATime);
+          raise TTZException.Create('Failed to parse time: ' + ATime);
         end;
   end;
-  Result:=Result*Sign;
+
+  Result:=Result * Sign;
 end;
 
-function MacroFirstWeekDay(const ADate: TTZDateTime;
-  const AWeekDay: TTZWeekDay): TTZDay;
+function MacroFirstWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDay;
 var
   FirstWDInMonth: TTZWeekDay;
   TheDay: Integer;
 begin
-  FirstWDInMonth:=WeekDayOf(ADate);
-  TheDay:=ADate.Day;
-  if FirstWDInMonth<AWeekDay Then begin
-    inc(TheDay,(integer(AWeekDay)-integer(FirstWDInMonth)));
-  end else if FirstWDInMonth>AWeekDay then begin
-    inc(TheDay,7-(integer(FirstWDInMonth)-integer(AWeekDay)));
+  FirstWDInMonth := WeekDayOf(ADate);
+  TheDay := ADate.Day;
+
+  if FirstWDInMonth < AWeekDay then
+    Inc(TheDay, (Integer(AWeekDay)-Integer(FirstWDInMonth)))
+  else if FirstWDInMonth>AWeekDay then
+    Inc(TheDay, 7-(Integer(FirstWDInMonth)-Integer(AWeekDay)));
+
+  if IsLeapYear(ADate.Year) then
+  begin
+    if TheDay>TTZMonthDaysLeapYearCount[ADate.Month] then
+      TheDay := 0; // Invalidate day
+  end
+  else
+  begin
+    if TheDay>TTZMonthDaysCount[ADate.Month] then
+      TheDay := 0; // Invalidate day
   end;
-  if IsLeapYear(ADate.Year) Then begin
-    if TheDay>TTZMonthDaysLeapYearCount[ADate.Month] Then TheDay:=0; //Invalidate day
-  end else begin
-    if TheDay>TTZMonthDaysCount[ADate.Month] Then TheDay:=0; //Invalidate day
-  end;
-  if TheDay<1 then begin
-    Raise TTZException.CreateFmt('No valid first week day for "%s" after %.4d.%.2d.%.2d',
+
+  if TheDay < 1 then
+    raise TTZException.CreateFmt('No valid first week day for "%s" after %.4d.%.2d.%.2d',
       [WeekDayToString(AWeekDay), ADate.Year, ADate.Month, ADate.Day]);
-  end;
-  Result:=TheDay;
+
+  Result := TheDay;
 end;
 
-function MacroLastWeekDay(const ADate: TTZDateTime;
-  const AWeekDay: TTZWeekDay): TTZDay;
+function MacroLastWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDay;
 var
   TmpDate: TTZDateTime;
   LastWDInMonth: TTZWeekDay;
   TheDay: Integer;
 begin
-  TmpDate:=ADate;
-  if not IsLeapYear(TmpDate.Year) Then begin
-    if TmpDate.Day>TTZMonthDaysCount[TmpDate.Month] then
-      TmpDate.Day:=TTZMonthDaysCount[TmpDate.Month];
-  end else begin
-    if TmpDate.Day>TTZMonthDaysLeapYearCount[TmpDate.Month] then begin
-      TmpDate.Day:=TTZMonthDaysLeapYearCount[TmpDate.Month];
-    end;
+  TmpDate := ADate;
+  if not IsLeapYear(TmpDate.Year) then
+  begin
+    if TmpDate.Day > TTZMonthDaysCount[TmpDate.Month] then
+      TmpDate.Day := TTZMonthDaysCount[TmpDate.Month];
+  end
+  else
+  begin
+    if TmpDate.Day > TTZMonthDaysLeapYearCount[TmpDate.Month] then
+      TmpDate.Day := TTZMonthDaysLeapYearCount[TmpDate.Month];
   end;
+
   LastWDInMonth:=WeekDayOf(TmpDate);
   TheDay:=TmpDate.Day;
-  if LastWDInMonth<AWeekDay Then begin
-    Dec(TheDay,7-(integer(AWeekDay)-integer(LastWDInMonth)));
-  end else if LastWDInMonth>AWeekDay then begin
-    Dec(TheDay,(integer(LastWDInMonth)-integer(AWeekDay)));
-  end;
-  if TheDay<1 then begin
-    Raise TTZException.CreateFmt('No valid last week day for "%s" before %.4d.%.2d.%.2d',
+  if LastWDInMonth < AWeekDay then
+    Dec(TheDay, 7-(integer(AWeekDay)-integer(LastWDInMonth)))
+  else if LastWDInMonth > AWeekDay then
+    Dec(TheDay, (integer(LastWDInMonth)-integer(AWeekDay)));
+
+  if TheDay < 1 then
+    raise TTZException.CreateFmt('No valid last week day for "%s" before %.4d.%.2d.%.2d',
       [WeekDayToString(AWeekDay), ADate.Year, ADate.Month, ADate.Day]);
-  end;
-  Result:=TheDay;
+
+  Result := TheDay;
 end;
 
 function DateTimeToStr(const ADate: TTZDateTime): String;
 var
-  H,M,S: BYTE;
+  H, M, S: BYTE;
 begin
-  DateTimeToTime(ADate,H,M,S);
-  Result:=format('%.4d.%.2d.%.2d %.2d:%.2d:%.2d',[ADate.Year,ADate.Month,ADate.Day,H,M,S]);
+  DateTimeToTime(ADate, H, M, S);
+  Result := Format('%.4d.%.2d.%.2d %.2d:%.2d:%.2d',
+    [ADate.Year, ADate.Month, ADate.Day, H, M, S]);
 end;
 
 function IncSeconds(const ADate: TTZDateTime; const ASeconds: Integer): TTZDateTime;
