@@ -32,3 +32,5 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of major changes between versions.
 - [PascalTZ article on FPC Wiki](http://wiki.freepascal.org/PascalTZ)
 - [PascalTZ repository in Lazarus CCR on SourceForge](http://sourceforge.net/projects/lazarus-ccr/files/PascalTZ/)
 - [List of tz database time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+- [zic - timezone compiler](http://linux.die.net/man/8/zic)
+- [zdump - timezone dumper](http://linux.die.net/man/8/zdump)
