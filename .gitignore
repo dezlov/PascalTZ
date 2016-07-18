@@ -1,7 +1,10 @@
 /lib/
 /bin/
 /tzdata/
-/test/
+/temp/
+lib/
+bin/
+backup/
 
 *.bak
 *.dll
