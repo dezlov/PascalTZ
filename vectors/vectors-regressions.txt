@@ -1,0 +1,128 @@
+// Test vectors for regressions and other interesting cases
+
+// Check if applying correct rule when order of rules by year and by month does not match
+//   Rule	US	1967	2006	-	Oct	lastSun	2:00	0	S
+//   Rule	US	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
+2003-02-01 05:00:00,2003-02-01 00:00:00,America/Detroit
+2003-06-01 05:00:00,2003-06-01 01:00:00,America/Detroit
+2003-11-08 05:00:00,2003-11-08 00:00:00,America/Detroit
+2004-11-01 15:55:00,2004-11-01 10:55:00,America/New_York
+
+// Check for incorrectly resolved macro (Sun>=23, Sun>=16, etc)
+//   Rule	GB-Eire	1972	1980	-	Mar	Sun>=16	2:00s	1:00	BST
+//   Rule	GB-Eire	1972	1980	-	Oct	Sun>=23	2:00s	0	GMT
+1975-10-15 00:00:00,1975-10-15 01:00:00,Europe/London
+
+// Check for abrupt end of DST rule, should US 1942-only rule carry on till next rule in 1945?
+//   Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
+//	    		-5:00	US	E%sT	1920
+//	    		-5:00	NYC	E%sT	1942
+//	    		-5:00	US	E%sT	1946
+//   Rule	US	1942	only	-	Feb	9	2:00	1:00	W # War
+//   Rule	US	1945	only	-	Aug	14	23:00u	1:00	P # Peace
+//   Rule	US	1945	only	-	Sep	lastSun	2:00	0	S
+1945-06-28 12:00:00,1945-06-28 08:00:00,America/New_York
+
+// Check for inability to apply DST rule that carries over from previous year
+//   Rule	NZ		2007	max		-	Sep	lastSun	2:00s	1:00	D
+//   Rule	NZ		2008	max		-	Apr	Sun>=1	2:00s	0		S
+2014-02-06 08:00:00,2014-02-06 21:00:00,Antarctica/McMurdo
+
+// Check for application of rule that matches LOCAL standard time, but not UTC time
+//   Rule	Russia	1992	only	-	Mar	lastSat	 23:00	1:00	S
+//   Rule	Russia	1992	only	-	Sep	lastSat	 23:00	0	-
+//   Rule	Russia	1993	2010	-	Mar	lastSun	 2:00s	1:00	S
+//   Rule	Russia	1993	1995	-	Sep	lastSun	 2:00s	0	-
+//   Rule	Russia	1996	2010	-	Oct	lastSun	 2:00s	0	-
+1993-03-27 20:00:00,1993-03-28 08:00:00,Asia/Magadan
+
+// Check for incorrectly fixed overflow of seconds of day when using Days Since AD (DSAD)
+1992-12-29 15:50:00,1992-12-30 02:50:00,Australia/Lord_Howe
+
+// Check handling of rules with shortest form of AT field value, i.e. time in hours
+//   Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	S
+//   Rule	WS	2012	max	-	Sep	lastSun	3:00	1	D
+2014-12-21 16:49:00,2014-12-22 06:49:00,Pacific/Apia
+
+// Check for rules that have have begin date depend on previous rule's SAVE offset
+//   Rule	StJohns	2007	2011	-	Mar	Sun>=8	0:01	1:00	D
+//   Rule	StJohns	2007	2010	-	Nov	Sun>=1	0:01	0	S
+2009-11-01 02:30:00,2009-11-01 00:00:00,America/St_Johns,2009-11-01 02:30:00
+2009-11-01 02:35:00,2009-10-31 23:05:00,America/St_Johns,2009-11-01 01:35:00
+2009-11-01 03:35:00,2009-11-01 00:05:00,America/St_Johns,2009-11-01 03:35:00
+
+// Check for correct application of fixed zone DST offset
+// NOTE: PHP-5.6.14 (tz 2015.6) on Windows applies incorrect offset!
+//   Zone	Pacific/Norfolk
+//						11:30	-		NFT		1974 Oct 27 02:00 # Norfolk T.
+//						11:30	1:00	NFST	1975 Mar  2 02:00
+1974-12-07 22:00:00,1974-12-08 10:30:00,Pacific/Norfolk
+
+// Check for the most recently changed zone without a DST rule
+2015-10-09 22:35:00,2015-10-10 09:35:00,Pacific/Norfolk
+
+// Check negative DST change (ambiguous local time, picking earlier rule)
+//   Zone	Asia/Hebron
+//			2:00	Jordan	EE%sT	1999
+//			2:00 Palestine	EE%sT
+//   Rule Palestine	1999	2005	-	Apr	Fri>=15	0:00	1:00	S
+//   Rule Palestine	1999	2003	-	Oct	Fri>=15	0:00	0	-
+2001-10-18 20:00:00,2001-10-18 23:00:00,Asia/Hebron
+2001-10-18 20:30:00,2001-10-18 23:30:00,Asia/Hebron
+2001-10-18 21:00:00,2001-10-18 23:00:00,Asia/Hebron,2001-10-18 20:00:00
+2001-10-18 21:30:00,2001-10-18 23:30:00,Asia/Hebron,2001-10-18 20:30:00
+2001-10-18 22:00:00,2001-10-19 00:00:00,Asia/Hebron
+2001-10-18 22:30:00,2001-10-19 00:30:00,Asia/Hebron
+
+// Check negative DST change (ambiguous local time, picking earlier rule)
+//   Zone	Europe/Budapest
+//			1:00	Hungary	CE%sT	1980 Sep 28  2:00s
+//			1:00	EU	CE%sT
+//   Rule	EU	1981	max	-	Mar	lastSun	 1:00u	1:00	S
+//   Rule	EU	1996	max	-	Oct	lastSun	 1:00u	0	-
+2006-10-29 00:00:00,2006-10-29 02:00:00,Europe/Budapest
+2006-10-29 00:30:00,2006-10-29 02:30:00,Europe/Budapest
+2006-10-29 01:00:00,2006-10-29 02:00:00,Europe/Budapest,2006-10-29 00:00:00
+2006-10-29 01:30:00,2006-10-29 02:30:00,Europe/Budapest,2006-10-29 00:30:00
+2006-10-29 02:00:00,2006-10-29 03:00:00,Europe/Budapest
+2006-10-29 02:30:00,2006-10-29 03:30:00,Europe/Budapest
+
+// Check date around DST change
+//   Zone America/Yellowknife 0	-	zzz	1935 # Yellowknife founded?
+//			-7:00	NT_YK	M%sT	1980
+//			-7:00	Canada	M%sT
+//   Rule	Canada	1974	2006	-	Oct	lastSun	2:00	0	S
+//   Rule	Canada	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
+1994-10-30 07:15:00,1994-10-30 01:15:00,America/Yellowknife
+
+// Check border-line zone and rule selection
+//   Zone	Asia/Aqtau	3:21:04	-	LMT	1924 May  2
+//				5:00	-	SHET	1981 Oct  1 # Shevchenko Time
+//				6:00	-	SHET	1982 Apr  1
+//				5:00 RussiaAsia	SHE%sT	1991
+//   Rule RussiaAsia	1981	1984	-	Apr	1	 0:00	1:00	S
+//   Rule RussiaAsia	1981	1983	-	Oct	1	 0:00	0	-
+1982-03-31 17:00:00,1982-03-31 23:00:00,Asia/Aqtau
+1982-03-31 17:30:00,1982-03-31 23:30:00,Asia/Aqtau
+1982-03-31 18:00:00,1982-04-01 00:00:00,Asia/Aqtau
+1982-03-31 18:30:00,1982-04-01 00:30:00,Asia/Aqtau
+1982-03-31 19:00:00,1982-04-01 01:00:00,Asia/Aqtau
+
+// PHP 5.6.15 (tzdata 2015.7) gives Local->UTC: 1998-10-24 20:41:28
+// MySQL 5.7.9 (tzdata 2016f) gives Local->UTC: 1998-10-24 19:41:28
+1998-10-24 20:41:28,1998-10-25 01:41:28,Asia/Bishkek,1998-10-24 19:41:28
+
+// PHP 5.6.15 (tzdata 2015.7) gives Local->UTC: 1977-09-26 00:54:29
+// MySQL 5.7.9 (tzdata 2016f) gives Local->UTC: 1977-09-25 23:54:29
+1977-09-26 00:54:29,1977-09-26 02:54:29,Europe/Athens,1977-09-25 23:54:29
+
+// Ambiguous local time in America/Glace_Bay 1974-10-27 01:00:00-02:00:00
+1974-10-27 00:00:00,1974-10-26 21:00:00,America/Glace_Bay
+1974-10-27 01:00:00,1974-10-26 22:00:00,America/Glace_Bay
+1974-10-27 02:00:00,1974-10-26 23:00:00,America/Glace_Bay
+1974-10-27 03:00:00,1974-10-27 00:00:00,America/Glace_Bay
+1974-10-27 04:00:00,1974-10-27 01:00:00,America/Glace_Bay
+1974-10-27 04:59:59,1974-10-27 01:59:59,America/Glace_Bay
+1974-10-27 05:00:00,1974-10-27 01:00:00,America/Glace_Bay,1974-10-27 04:00:00
+1974-10-27 05:59:59,1974-10-27 01:59:59,America/Glace_Bay,1974-10-27 04:59:59
+1974-10-27 06:00:00,1974-10-27 02:00:00,America/Glace_Bay
