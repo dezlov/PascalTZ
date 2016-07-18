@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 cd /d %~dp0
 lazbuild -B -q tester.lpi
