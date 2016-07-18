@@ -17,6 +17,17 @@ See [USAGE.md](USAGE.md) for general usage instructions and known issues.
 
 See [CHANGELOG.md](CHANGELOG.md) for a list of major changes between versions.
 
+### Testing
+
+A testing framework consists of the following ingredients:
+
+1. Test runner project located in `test` directory.
+2. Test vectors for time zone conversions located in `vectors` directory.
+3. Test cases (FPCUnit based) for provided test vectors and internal functions.
+4. PHP script to generate test vectors, and test time zone conversions using PHP and MySQL implementations.
+
+Running the test project requires the time zone database to be available in the `tzdata` directory.
+
 ### Authors
 
 - 2009 - José Mejuto
