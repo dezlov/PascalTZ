@@ -29,6 +29,7 @@ type
     FRuleGroups: TTZRuleGroupList;
     FZoneGroups: TTZZoneGroupList;
     FLinks: TTZLinkList;
+    FDatabasePath: String;
     procedure DatabaseChanged;
     function GetCountZones: Integer;
     function GetCountRules: Integer;
@@ -39,6 +40,10 @@ type
     procedure BareParseZone(const AIterator: TTZLineIterate; const AZone: AsciiString);
     procedure BareParseRule(const AIterator: TTZLineIterate);
     procedure BareParseLink(const AIterator: TTZLineIterate);
+    procedure SetDatabasePath(const APath: String);
+    procedure ReloadDatabasePath;
+  protected
+    procedure Loaded; override;
   // Keep interesting methods in "protected" section so they could be accessed by sub-classes.
   protected
     function FindRuleForDate(const ARuleList: TTZRuleList; const AZone: TTZZone;
@@ -88,6 +93,8 @@ type
     constructor Create; overload;
     constructor Create(AOwner: TComponent); override; overload;
     destructor Destroy; override;
+  published
+    property DatabasePath: String read FDatabasePath write SetDatabasePath;
   end;
 
 implementation
@@ -932,6 +939,34 @@ begin
   FRuleGroups.Clear;
 end;
 
+procedure TPascalTZ.ReloadDatabasePath;
+begin
+  ClearDatabase;
+  if Length(FDatabasePath) > 0 then
+  begin
+    if FileExists(FDatabasePath) then
+      ParseDatabaseFromFile(FDatabasePath)
+    else if DirectoryExists(FDatabasePath) then
+      ParseDatabaseFromDirectory(FDatabasePath)
+    else
+      raise TTZException.Create(Format('Time zone database path does not exist: %s', [FDatabasePath]));
+  end;
+end;
+
+procedure TPascalTZ.SetDatabasePath(const APath: String);
+begin
+  FDatabasePath := APath;
+  // Do not reload database at design time, or otherwise until component is loaded
+  if [csDesigning, csLoading] * ComponentState <> [] then Exit;
+  ReloadDatabasePath;
+end;
+
+procedure TPascalTZ.Loaded;
+begin
+  inherited;
+  ReloadDatabasePath;
+end;
+
 // Keep the default constructor for backward compatibility.
 constructor TPascalTZ.Create;
 begin
@@ -941,6 +976,7 @@ end;
 constructor TPascalTZ.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  FDatabasePath := '';
   FDetectInvalidLocalTimes := True;
   FLinks := TTZLinkList.Create(True); // FreeObjects = True
   FZoneGroups := TTZZoneGroupList.Create(True); // FreeObjects = True

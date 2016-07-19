@@ -4,6 +4,7 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+- Added `DatabasePath` published property. Allows specifying the database path (file or directory) at design time, which will be automatically loaded at runtime.
 - Created a design and runtime package for Lazarus IDE.
 - Converted `TPascalTZ` class to a component.
 
