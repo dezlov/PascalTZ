@@ -4,6 +4,7 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+- Created a design and runtime package for Lazarus IDE.
 - Converted `TPascalTZ` class to a component.
 
 ## 2.0 (2016-07-19)
