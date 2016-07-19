@@ -18,12 +18,10 @@ Authors:
 interface
 
 uses
-  Classes,SysUtils,uPascalTZ_Types;
+  Classes, SysUtils, uPascalTZ_Types;
 
 type
-  { TPascalTZ }
-
-  TPascalTZ = class(TObject)
+  TPascalTZ = class(TComponent)
   private
     ParseStatusTAG: AsciiString;
     ParseStatusPreviousZone: AsciiString;
@@ -87,7 +85,8 @@ type
     procedure ParseDatabaseFromStream(const AStream: TStream);
     procedure ParseDatabaseFromMemory(const AData: Pointer; const ADataSize: Integer);
     procedure ClearDatabase;
-    constructor Create;
+    constructor Create; overload;
+    constructor Create(AOwner: TComponent); override; overload;
     destructor Destroy; override;
   end;
 
@@ -95,8 +94,6 @@ implementation
 
 uses
   RtlConsts, DateUtils, Math, uPascalTZ_Tools;
-
-{ TPascalTZ }
 
 function TPascalTZ.FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
 var
@@ -595,22 +592,22 @@ procedure TPascalTZ.GetTimeZoneNames(const AZones: TStrings;
   const AIncludeLinks: Boolean = True);
 var
   I: Integer;
-  Name: AsciiString;
+  ZoneName: AsciiString;
 begin
   AZones.Clear;
   for I := 0 to FZoneGroups.Count-1 do
   begin
-    Name := FZoneGroups[I].Name;
-    if AZones.IndexOf(Name) < 0 then
-      AZones.Add(Name);
+    ZoneName := FZoneGroups[I].Name;
+    if AZones.IndexOf(ZoneName) < 0 then
+      AZones.Add(ZoneName);
   end;
   if AIncludeLinks then
   begin
     for I := 0 to FLinks.Count-1 do
     begin
-      Name := FLinks[I].LinkName;
-      if AZones.IndexOf(Name) < 0 then
-        AZones.Add(Name);
+      ZoneName := FLinks[I].LinkName;
+      if AZones.IndexOf(ZoneName) < 0 then
+        AZones.Add(ZoneName);
     end;
   end;
 end;
@@ -935,8 +932,15 @@ begin
   FRuleGroups.Clear;
 end;
 
+// Keep the default constructor for backward compatibility.
 constructor TPascalTZ.Create;
 begin
+  Create(nil);
+end;
+
+constructor TPascalTZ.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
   FDetectInvalidLocalTimes := True;
   FLinks := TTZLinkList.Create(True); // FreeObjects = True
   FZoneGroups := TTZZoneGroupList.Create(True); // FreeObjects = True
@@ -948,6 +952,7 @@ begin
   FreeAndNil(FLinks);
   FreeAndNil(FZoneGroups);
   FreeAndNil(FRuleGroups);
+  inherited Destroy;
 end;
 
 end.

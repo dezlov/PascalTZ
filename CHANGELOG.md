@@ -2,6 +2,10 @@
 
 This change log contains the highlights of major changes. For details on all finer changes please check the commits history.
 
+## Latest development
+
+- Converted `TPascalTZ` class to a component.
+
 ## 2.0 (2016-07-19)
 
 Features:
