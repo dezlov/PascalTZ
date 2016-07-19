@@ -68,7 +68,6 @@ type
     property CountRules: Integer read GetCountRules;
     property CountLinks: Integer read GetCountLinks;
     property CountTimeZoneNames: Integer read GetCountTimeZoneNames;
-    property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
     procedure GetTimeZoneNames(const AZones: TStrings; const AIncludeLinks: Boolean = True);
     function TimeZoneExists(const AZone: String; const AIncludeLinks: Boolean = True): Boolean;
     function Convert(const ADateTime: TTZDateTime; const AFromZone, AToZone: String): TTZDateTime; overload;
@@ -95,6 +94,7 @@ type
     destructor Destroy; override;
   published
     property DatabasePath: String read FDatabasePath write SetDatabasePath;
+    property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
   end;
 
 implementation
