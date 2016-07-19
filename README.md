@@ -17,13 +17,14 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of major changes between versions.
 
 ### Usage
 
-1. Add `source` directory to *Other Unit Files* section of your project.
-2. Add `uPascalTZ` unit to the uses clause.
-3. Create an instance of `TPascalTZ` class.
-4. Load the time zone database into an instance of `TPascalTZ`:
-  - [Time Zone Database](https://www.iana.org/time-zones) - download and unpack the latest `tzdata*.tar.gz`.
-  - You can load each file using `ParseDatabaseFromFile` method or load a whole directory using `ParseDatabaseFromDirectory`.
-5. Use `GMTToLocalTime`, `LocalTimeToGMT` and other methods to convert date and time between various time zones.
+1. Add `uPascalTZ` unit to the uses clause of your project.
+2. Create an instance of `TPascalTZ` class.
+3. Load the time zone database into an instance of `TPascalTZ`:
+  - Download and unpack the latest [Time Zone Database](https://www.iana.org/time-zones), i.e. `tzdata*.tar.gz`.
+  - Set `DatabasePath` property to the location of your time zone database.
+4. Use `GMTToLocalTime`, `LocalTimeToGMT` and other methods to convert date and time between various time zones.
+
+Design and runtime package is available for installation into Lazarus IDE. 
 
 ### Testing
 
