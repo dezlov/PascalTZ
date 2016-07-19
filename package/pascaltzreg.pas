@@ -8,6 +8,8 @@ procedure Register;
 
 implementation
 
+{$R *.rc}
+
 uses
   Classes, LResources, uPascalTZ;
 
