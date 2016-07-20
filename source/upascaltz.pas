@@ -92,6 +92,10 @@ type
     constructor Create; overload;
     constructor Create(AOwner: TComponent); override; overload;
     destructor Destroy; override;
+  public
+    class function LocalTime: TDateTime;
+    class function UniversalTime: TDateTime;
+    class function UnixTime: Int64;
   published
     property DatabasePath: String read FDatabasePath write SetDatabasePath;
     property DetectInvalidLocalTimes: Boolean read FDetectInvalidLocalTimes write FDetectInvalidLocalTimes;
@@ -101,6 +105,26 @@ implementation
 
 uses
   RtlConsts, DateUtils, Math, uPascalTZ_Tools;
+
+class function TPascalTZ.LocalTime: TDateTime;
+begin
+  Result := Now;
+end;
+
+class function TPascalTZ.UniversalTime: TDateTime;
+begin
+  // LocalTimeToUniversal(Now) is a crude way of getting current UTC time
+  // because Now gets us local time and then LocalTimeToUniversal adjusts it
+  // by the currently active local time offset (suffers from a race condition).
+  // It would be better to use something like LazUTF8SysUtils.NowUTC,
+  // but that would add LazUtils dependency. Perhaps NowUTC can be moved to FPC?
+  Result := LocalTimeToUniversal(Now);
+end;
+
+class function TPascalTZ.UnixTime: Int64;
+begin
+  Result := DateTimeToUnix(UniversalTime);
+end;
 
 function TPascalTZ.FindRuleGroup(const AName: AsciiString): TTZRuleGroup;
 var
