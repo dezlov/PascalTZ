@@ -72,6 +72,8 @@ type
 
   TTZMonth  = 1..12;
   TTZDay    = 1..31;
+
+  // Time component types are used for strict time range checking.
   TTZHour   = 0..24; // allow for 24:00:00 notation!
   TTZMinute = 0..59;
   TTZSecond = 0..59;
@@ -80,6 +82,9 @@ type
   TTZTimeForm = (tztfWallClock, tztfStandard, tztfUniversal);
 
 const
+  // Max allowed time specification as a total number of seconds.
+  TZ_MAX_TIME_VALUE_SECONDS = 24 * 60 * 60; // 24:00:00
+
   // Used for identifying unspecified dates in future, i.e. "max" keyword in rules.
   TZ_YEAR_MAX = 9999;
 

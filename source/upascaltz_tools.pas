@@ -51,7 +51,7 @@ function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
 function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
 function SecondsToShortTime(const ASeconds: Integer): String;
 function SecondsToTime(const ASeconds: Integer; AAllowShortTime: Boolean = False): String;
-function TimeToSeconds(const ATime: AsciiString): Integer;
+function TimeToSeconds(const ATime: AsciiString; AStrickTimeRange: Boolean = True): Integer;
 function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
 function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
@@ -607,16 +607,14 @@ begin
   end;
 end;
 
-function TimeToSeconds(const ATime: AsciiString): Integer;
+function TimeToSeconds(const ATime: AsciiString; AStrickTimeRange: Boolean = True): Integer;
 var
   Sign: integer;
   TwoColons: integer;
   j: integer;
   TmpTime: AsciiString;
   TimeIterator: TTZLineIterate;
-  Hours: TTZHour;
-  Minutes: TTZMinute;
-  Seconds: TTZSecond;
+  Hours, Minutes, Seconds: Integer;
 begin
   // Time could be expressed in:
   //   [-]h = hours
@@ -650,6 +648,7 @@ begin
   Seconds := 0;
 
   try
+
     case TwoColons of
       // Format is "h"
       0:  begin
@@ -679,12 +678,30 @@ begin
       else
         raise TTZException.Create('Unexpected number of colons.');
     end;
+
+    // Total number of seconds
+    Result := (Hours * 3600) + (Minutes * 60) + Seconds;
+
+    // Check strict time range
+    if AStrickTimeRange then
+    begin
+      if (Hours < Low(TTZHour)) or (Hours > High(TTZHour)) then
+        raise TTZException.CreateFmt('Hours component "%d" is out of range.', [Hours]);
+      if (Minutes < Low(TTZMinute)) or (Minutes > High(TTZMinute)) then
+        raise TTZException.CreateFmt('Minutes component "%d" is out of range.', [Minutes]);
+      if (Seconds < Low(TTZSecond)) or (Seconds > High(TTZSecond)) then
+        raise TTZException.CreateFmt('Seconds component "%d" is out of range.', [Seconds]);
+      if Result > TZ_MAX_TIME_VALUE_SECONDS then
+        raise TTZException.CreateFmt('Total number of seconds "%d" exceeds the limit.', [Result]);
+    end;
+
+    // Apply time sign
+    Result := Sign * Result;
+
   except on E: Exception do
     raise TTZException.CreateFmt('Failed to parse time string "%s" with error: %s',
       [ATime, E.Message]);
   end;
-
-  Result := Sign * ((Hours * 3600) + (Minutes * 60) + Seconds);
 end;
 
 function MacroFirstWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDay;
