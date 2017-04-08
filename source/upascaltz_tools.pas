@@ -51,7 +51,7 @@ function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
 function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
 function SecondsToShortTime(const ASeconds: Integer): String;
 function SecondsToTime(const ASeconds: Integer; AAllowShortTime: Boolean = False): String;
-function TimeToSeconds(const ATime: AsciiString): integer;
+function TimeToSeconds(const ATime: AsciiString): Integer;
 function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
 function ResolveTimeZoneAbbreviation(const AZoneLetters, ARuleLetters: AsciiString;
@@ -607,7 +607,7 @@ begin
   end;
 end;
 
-function TimeToSeconds(const ATime: AsciiString): integer;
+function TimeToSeconds(const ATime: AsciiString): Integer;
 var
   Sign: integer;
   TwoColons: integer;
@@ -624,14 +624,17 @@ begin
   //   [-]h:m:s = hours:minutes:seconds
   // So count the amount of ':' to get the format
 
+  if Length(ATime) = 0 then
+    raise TTZException.Create('Time string is empty.');
+
   if ATime[1]='-' then
   begin
-    Sign:=-1; //Negative seconds...
+    Sign:=-1; // Negative time
     TmpTime:=Copy(ATime,2,Length(ATime)-1);
   end
   else
   begin
-    Sign:=1;  //Positive seconds...
+    Sign:=1;  // Positive time
     TmpTime:=ATime;
   end;
 
@@ -642,50 +645,46 @@ begin
       Inc(TwoColons);
   end;
 
-  case TwoColons of
-    // Format is "h"
-    0:  begin
-          Result:=StrToInt(TmpTime)*3600;
-        end;
-    // Format is "hh:mm"
-    1:  begin
-          TimeIterator:=TTZLineIterate.Create(TmpTime,':');
-          try
-            Hours:=StrToInt(TimeIterator.GetNextWord);
-            Minutes:=StrToInt(TimeIterator.GetNextWord);
-            Result:=Hours*3600+Minutes*60;
-          except on E: Exception do
-            begin
+  Hours := 0;
+  Minutes := 0;
+  Seconds := 0;
+
+  try
+    case TwoColons of
+      // Format is "h"
+      0:  begin
+            Hours := StrToInt(TmpTime);
+          end;
+      // Format is "hh:mm"
+      1:  begin
+            TimeIterator:=TTZLineIterate.Create(TmpTime,':');
+            try
+              Hours:=StrToInt(TimeIterator.GetNextWord);
+              Minutes:=StrToInt(TimeIterator.GetNextWord);
+            finally
               TimeIterator.Free;
-              raise TTZException.Create('Failed to parse time: ' + ATime);
             end;
           end;
-          TimeIterator.Free;
-        end;
-    // Format is "hh:mm:ss"
-    2:  begin
-          TimeIterator:=TTZLineIterate.Create(TmpTime,':');
-          try
-            Hours:=StrToInt(TimeIterator.GetNextWord);
-            Minutes:=StrToInt(TimeIterator.GetNextWord);
-            Seconds:=StrToInt(TimeIterator.GetNextWord);
-            Result:=Hours*3600+Minutes*60+Seconds;
-          except on E: Exception do
-            begin
+      // Format is "hh:mm:ss"
+      2:  begin
+            TimeIterator:=TTZLineIterate.Create(TmpTime,':');
+            try
+              Hours:=StrToInt(TimeIterator.GetNextWord);
+              Minutes:=StrToInt(TimeIterator.GetNextWord);
+              Seconds:=StrToInt(TimeIterator.GetNextWord);
+            finally
               TimeIterator.Free;
-              raise TTZException.Create('Failed to parse time: ' + ATime);
             end;
           end;
-          TimeIterator.Free;
-        end;
-    else
-        begin
-          TimeIterator.Free;
-          raise TTZException.Create('Failed to parse time: ' + ATime);
-        end;
+      else
+        raise TTZException.Create('Unexpected number of colons.');
+    end;
+  except on E: Exception do
+    raise TTZException.CreateFmt('Failed to parse time string "%s" with error: %s',
+      [ATime, E.Message]);
   end;
 
-  Result:=Result * Sign;
+  Result := Sign * ((Hours * 3600) + (Minutes * 60) + Seconds);
 end;
 
 function MacroFirstWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDay;
