@@ -12,9 +12,14 @@ Features:
 - Created a design and runtime package for Lazarus IDE.
 - Converted `TPascalTZ` class to a component.
 
+Enhancements:
+
+- Strict time string parsing with allowed range 00:00:00 to 24:00:00, where each time components is also checked independently.
+
 Bugfixes:
 
 - Support longer time zone abbreviations in 2017b. Increased `TZ_TIMEZONELETTERS_SIZE` from 8 to 11.
+- Avoid compiler range check errors for "24:00" time string notation.
 
 ## 2.0 (2016-07-19)
 
