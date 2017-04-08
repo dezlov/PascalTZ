@@ -12,6 +12,10 @@ Features:
 - Created a design and runtime package for Lazarus IDE.
 - Converted `TPascalTZ` class to a component.
 
+Bugfixes:
+
+- Support longer time zone abbreviations in 2017b. Increased `TZ_TIMEZONELETTERS_SIZE` from 8 to 11.
+
 ## 2.0 (2016-07-19)
 
 Features:
