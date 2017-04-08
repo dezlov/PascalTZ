@@ -57,9 +57,11 @@ const
   //   "America/Argentina/Buenos_Aires"
   //   "America/Argentina/Rio_Gallegos"
   //   "America/North_Dakota/New_Salem"
+  // Longest time zone abbreviation in 2017b:
+  //   "+0330/+0430" (Asia/Tehran)
   TZ_RULENAME_SIZE = 12;
   TZ_ZONENAME_SIZE = 32; // max 32 characters is 'backward' compatible!
-  TZ_TIMEZONELETTERS_SIZE = 8;
+  TZ_TIMEZONELETTERS_SIZE = 11;
   TZ_ONRULE_SIZE = 7;
 
 type
