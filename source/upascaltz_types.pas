@@ -72,7 +72,7 @@ type
 
   TTZMonth  = 1..12;
   TTZDay    = 1..31;
-  TTZHour   = 0..23;
+  TTZHour   = 0..24; // allow for 24:00:00 notation!
   TTZMinute = 0..59;
   TTZSecond = 0..59;
 
