@@ -49,11 +49,14 @@ type
     procedure CheckMacroSolver(const DateIn, DateOut: TDateTime; const MacroCondition: String);
     procedure CheckMacroSolver(const DateIn, DateOut: String; const MacroCondition: String);
     procedure CheckFixTime(const T1, T2: TTZDateTime);
+    function TryStrictTimeToSeconds(const ATime: String): Boolean;
   published
     procedure TestMacroSolver;
     procedure TestFixTime;
     procedure TestCompareDates;
     procedure TestWeekDay;
+    procedure TestTimeToSeconds;
+    procedure TestInvalidTimeToSeconds;
   end;
 
 const
@@ -262,6 +265,47 @@ begin
   CheckTrue(eTZFriday = WeekDayOf(MakeTZDate(2016, 1, 1, 0)));
   CheckTrue(eTZSaturday = WeekDayOf(MakeTZDate(2016, 7, 2, 0)));
   CheckTrue(eTZSunday = WeekDayOf(MakeTZDate(2016, 7, 3, 0)));
+end;
+
+procedure TTZTestCaseUtils.TestTimeToSeconds;
+const
+  SecsPerHour = MinsPerHour * SecsPerMin;
+  SecsPerDay = HoursPerDay * SecsPerHour;
+begin
+  CheckEquals(TimeToSeconds('1'), SecsPerHour);
+  CheckEquals(TimeToSeconds('-1'), -SecsPerHour);
+  CheckEquals(TimeToSeconds('1:05'), SecsPerHour + 5 * SecsPerMin);
+  CheckEquals(TimeToSeconds('-1:05'), -(SecsPerHour + 5 * SecsPerMin));
+  CheckEquals(TimeToSeconds('00:00:30'), 30);
+  CheckEquals(TimeToSeconds('-00:00:30'), -30);
+  CheckEquals(TimeToSeconds('00:30:00'), 30 * SecsPerMin);
+  CheckEquals(TimeToSeconds('01:00:00'), SecsPerHour);
+  CheckEquals(TimeToSeconds('23:59:59'), SecsPerDay - 1);
+  CheckEquals(TimeToSeconds('24:00:00'), SecsPerDay);
+  CheckEquals(TimeToSeconds('-24:00:00'), -SecsPerDay);
+end;
+
+procedure TTZTestCaseUtils.TestInvalidTimeToSeconds;
+begin
+  CheckFalse(TryStrictTimeToSeconds(''));
+  CheckFalse(TryStrictTimeToSeconds('test'));
+  CheckFalse(TryStrictTimeToSeconds('100'));
+  CheckFalse(TryStrictTimeToSeconds('59'));
+  CheckFalse(TryStrictTimeToSeconds('59:59'));
+  CheckFalse(TryStrictTimeToSeconds('24:00:01'));
+  CheckFalse(TryStrictTimeToSeconds('24:59:59'));
+  CheckFalse(TryStrictTimeToSeconds('25:00:00'));
+  CheckFalse(TryStrictTimeToSeconds('-25:00:00'));
+end;
+
+function TTZTestCaseUtils.TryStrictTimeToSeconds(const ATime: String): Boolean;
+begin
+  try
+    TimeToSeconds(ATime, True);
+    Result := True;
+  except on E: TTZException do
+    Result := False;
+  end;
 end;
 
 initialization
