@@ -980,7 +980,7 @@ end;
 procedure TPascalTZ.SetDatabasePath(const APath: String);
 begin
   FDatabasePath := APath;
-  // Do not reload database at design time, or otherwise until component is loaded
+  // Do not load database at design time or while component is loading.
   if [csDesigning, csLoading] * ComponentState <> [] then Exit;
   ReloadDatabasePath;
 end;
@@ -988,6 +988,8 @@ end;
 procedure TPascalTZ.Loaded;
 begin
   inherited;
+  // Do not load database at design time.
+  if csDesigning in ComponentState then Exit;
   ReloadDatabasePath;
 end;
 
