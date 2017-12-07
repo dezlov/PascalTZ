@@ -42,6 +42,7 @@ type
     procedure BareParseLink(const AIterator: TTZLineIterate);
     procedure SetDatabasePath(const APath: String);
     procedure ReloadDatabasePath;
+    function TryReloadDatabasePath: Boolean;
   protected
     procedure Loaded; override;
   // Keep interesting methods in "protected" section so they could be accessed by sub-classes.
@@ -977,6 +978,17 @@ begin
   end;
 end;
 
+function TPascalTZ.TryReloadDatabasePath: Boolean;
+begin
+  Result := True;
+  try
+    ReloadDatabasePath;
+  except
+    Result := False;
+    ClearDatabase;
+  end;
+end;
+
 procedure TPascalTZ.SetDatabasePath(const APath: String);
 begin
   FDatabasePath := APath;
@@ -990,7 +1002,9 @@ begin
   inherited;
   // Do not load database at design time.
   if csDesigning in ComponentState then Exit;
-  ReloadDatabasePath;
+  // Exceptions here would crash the application before it can handle them.
+  // It is better to silently fail, rather than kill the entire application.
+  TryReloadDatabasePath;
 end;
 
 // Keep the default constructor for backward compatibility.
