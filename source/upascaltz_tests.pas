@@ -28,6 +28,8 @@ type
     DatabaseDir: String;
     VectorsDir: String;
     VectorFileMask: String;
+    LoadedVectorFiles: TStringList;
+    LoadedVectorCount: Int64;
   protected
     procedure OneTimeSetup; override;
     procedure OneTimeTearDown; override;
@@ -95,6 +97,8 @@ begin
     Fail('Timezone database object is not assigned. Check test setup.');
   Vectors := TTZTestVectorRepository.Create;
   Vectors.LoadFromDirectory(TTZTestSetup.VectorsDir, TTZTestSetup.VectorFileMask);
+  TTZTestSetup.LoadedVectorFiles.AddStrings(Vectors.LoadedFiles);
+  TTZTestSetup.LoadedVectorCount += Vectors.Count;
   if Vectors.Count = 0 then
     Fail(Format('No test vectors loaded, check vectors direcory "%s".', [TTZTestSetup.VectorsDir]));
 end;
@@ -312,8 +316,13 @@ initialization
   TTZTestSetup.DatabaseDir := TZ_DEFAULT_DATABASE_DIR;
   TTZTestSetup.VectorsDir := TZ_DEFAULT_VECTORS_DIR;
   TTZTestSetup.VectorFileMask := TZ_DEFAULT_VECTOR_FILE_MASK;
+  TTZTestSetup.LoadedVectorFiles := TStringList.Create;
+  TTZTestSetup.LoadedVectorCount := 0;
   RegisterTestDecorator(TTZTestSetup, TTZTestCaseVectors);
   RegisterTest(TTZTestCaseUtils);
+
+finalization
+  FreeAndNil(TTZTestSetup.LoadedVectorFiles);
 
 end.
 

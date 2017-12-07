@@ -41,9 +41,11 @@ type
 
   TTZTestVectorRepository = class
   strict private
+    FLoadedFiles: TStringList;
     FTestVectors: TFPObjectList;
     function GetCount: Integer;
     function GetItem(Index: Integer): TTZTestVector;
+    function GetLoadedFiles: TStrings;
   public
     constructor Create;
     destructor Destroy; override;
@@ -56,6 +58,7 @@ type
   public
     property Item[Index: Integer]: TTZTestVector read GetItem; default;
     property Count: Integer read GetCount;
+    property LoadedFiles: TStrings read GetLoadedFiles;
   end;
 
 function TZParseDateTime(const Value: String): TDateTime; inline;
@@ -218,12 +221,14 @@ end;
 
 constructor TTZTestVectorRepository.Create;
 begin
+  FLoadedFiles := TStringList.Create;
   FTestVectors := TFPObjectList.Create(True); // FreeObjects = True!
 end;
 
 destructor TTZTestVectorRepository.Destroy;
 begin
   FreeAndNil(FTestVectors);
+  FreeAndNil(FLoadedFiles);
   inherited Destroy;
 end;
 
@@ -240,6 +245,11 @@ end;
 function TTZTestVectorRepository.GetItem(Index: Integer): TTZTestVector;
 begin
   Result := TTZTestVector(FTestVectors[Index]);
+end;
+
+function TTZTestVectorRepository.GetLoadedFiles: TStrings;
+begin
+  Result := FLoadedFiles;
 end;
 
 function TTZTestVectorRepository.Add(const TestVector: TTZTestVector): Integer;
@@ -278,6 +288,7 @@ begin
   try
     Lines.LoadFromFile(FileName);
     LoadFromLines(Lines);
+    FLoadedFiles.Add(FileName);
   finally
     Lines.Free;
   end;
