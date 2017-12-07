@@ -21,6 +21,12 @@ Bugfixes:
 - Support longer time zone abbreviations in 2017b. Increased `TZ_TIMEZONELETTERS_SIZE` from 8 to 11.
 - Avoid compiler range check errors for "24:00" time string notation.
 
+Miscellaneous:
+
+- Added randomly generated test vectors using PHP 7.2.0 and tzdata 2017.3.
+- Moved randomly generated test vectors to individual subfolders.
+- Randomly generated test vectors are no longer a part of the default test suite, because they cannot be tested consistently, because they are dependent on specific versions of tzdata.
+
 ## 2.0 (2016-07-19)
 
 Features:
