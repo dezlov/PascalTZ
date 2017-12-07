@@ -26,6 +26,7 @@ Miscellaneous:
 - Added randomly generated test vectors using PHP 7.2.0 and tzdata 2017.3.
 - Moved randomly generated test vectors to individual subfolders.
 - Randomly generated test vectors are no longer a part of the default test suite, because they cannot be tested consistently, because they are dependent on specific versions of tzdata.
+- Use independently configured directories for tzdata and vectors in the test runner.
 
 ## 2.0 (2016-07-19)
 

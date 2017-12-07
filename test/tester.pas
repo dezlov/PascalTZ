@@ -20,8 +20,9 @@ uses
   uPascalTZ_Tests;
 
 const
-  PauseOption = 'pause';
-  RootDirOption = 'root';
+  OptionPause = 'pause';
+  OptionDatabaseDir = 'tzdata';
+  OptionVectorsDir = 'vectors';
 
 type
   TApplication = class(TTestRunner)
@@ -34,32 +35,32 @@ procedure TApplication.AppendLongOpts;
 begin
   inherited AppendLongOpts;
   // Avoids a warning about invalid options in TCustomApplication.CheckOptions
-  LongOpts.Append(PauseOption);
-  LongOpts.Append(RootDirOption + ':');
+  LongOpts.Append(OptionPause);
+  LongOpts.Append(OptionDatabaseDir + ':');
+  LongOpts.Append(OptionVectorsDir + ':');
 end;
 
 procedure TApplication.WriteCustomHelp;
 begin
   inherited WriteCustomHelp;
   WriteLn;
-  WriteLn(Format('  --%:-12s  %s', [PauseOption, 'Pause at the end before exiting.']));
-  WriteLn(Format('  --%:-12s  %s', [RootDirOption + '=<dir>', 'Root directory for tzdata and vectors.']));
+  WriteLn(Format('  --%:-16s  %s', [OptionPause, 'Pause at the end, just before exiting.']));
+  WriteLn(Format('  --%:-16s  %s', [OptionDatabaseDir + '=<dir>', 'Directory for tzdata.']));
+  WriteLn(Format('  --%:-16s  %s', [OptionVectorsDir + '=<dir>', 'Directory for test vectors.']));
 end;
 
 var
   Application: TApplication;
   PauseOnExit: Boolean;
-  RootDir: String;
 
 begin
   Application := TApplication.Create(nil);
   Application.StopOnException := True;
   Application.Initialize;
 
-  PauseOnExit := Application.HasOption(PauseOption);
-  RootDir := Application.GetOptionValue(RootDirOption);
-  TTZTestSetup.DatabaseDir := RootDir + 'tzdata';
-  TTZTestSetup.VectorsDir := RootDir + 'vectors';
+  PauseOnExit := Application.HasOption(OptionPause);
+  TTZTestSetup.DatabaseDir := Application.GetOptionValue(OptionDatabaseDir);
+  TTZTestSetup.VectorsDir := Application.GetOptionValue(OptionVectorsDir);
   TTZTestSetup.VectorFileMask := '*.txt';
 
   try
