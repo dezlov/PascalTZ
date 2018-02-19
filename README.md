@@ -24,7 +24,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of major changes between versions.
   - Set `DatabasePath` property to the location of your time zone database.
 4. Use `GMTToLocalTime`, `LocalTimeToGMT` and other methods to convert date and time between various time zones.
 
-Design and runtime package is available for installation into Lazarus IDE. 
+[Design and runtime package](package) is available for installation into Lazarus IDE. 
 
 ### Testing
 
