@@ -2,6 +2,12 @@
 
 This change log contains the highlights of major changes. For details on all finer changes please check the commits history.
 
+## 2.1.1 (2018-02-21)
+
+Miscellaneous:
+
+- Updated package file version number.
+
 ## 2.1 (2018-02-19)
 
 Features:
