@@ -2,6 +2,12 @@
 
 This change log contains the highlights of major changes. For details on all finer changes please check the commits history.
 
+## Latest development
+
+Miscellaneous:
+
+- Added Online Package Manager (OPM) update JSON file.
+
 ## 2.1.1 (2018-02-21)
 
 Miscellaneous:
