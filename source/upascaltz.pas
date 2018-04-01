@@ -965,13 +965,16 @@ begin
 end;
 
 procedure TPascalTZ.ReloadDatabasePath;
+var
+  DrExsts: Boolean;
 begin
   ClearDatabase;
   if Length(FDatabasePath) > 0 then
   begin
-    if FileExists(FDatabasePath) then
+    DrExsts:=DirectoryExists(FDatabasePath);
+    if not DrExsts and FileExists(FDatabasePath) then
       ParseDatabaseFromFile(FDatabasePath)
-    else if DirectoryExists(FDatabasePath) then
+    else if DrExsts then 
       ParseDatabaseFromDirectory(FDatabasePath)
     else
       raise TTZException.Create(Format('Time zone database path does not exist: %s', [FDatabasePath]));
