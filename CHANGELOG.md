@@ -4,6 +4,10 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development
 
+Bugfixes:
+
+- Fixed loading of time zone data directory via `DatabasePath` property on Unix-like platforms.
+
 Miscellaneous:
 
 - Added Online Package Manager (OPM) update JSON file.

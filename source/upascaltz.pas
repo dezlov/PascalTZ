@@ -969,10 +969,12 @@ begin
   ClearDatabase;
   if Length(FDatabasePath) > 0 then
   begin
-    if FileExists(FDatabasePath) then
-      ParseDatabaseFromFile(FDatabasePath)
-    else if DirectoryExists(FDatabasePath) then
+    // On Unix-like platforms, FileExists returns TRUE for both files and directories.
+    // So, we must check DirectoryExists first before checking FileExists.
+    if DirectoryExists(FDatabasePath) then
       ParseDatabaseFromDirectory(FDatabasePath)
+    else if FileExists(FDatabasePath) then
+      ParseDatabaseFromFile(FDatabasePath)
     else
       raise TTZException.Create(Format('Time zone database path does not exist: %s', [FDatabasePath]));
   end;
