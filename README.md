@@ -37,6 +37,18 @@ A testing framework consists of the following ingredients:
 
 Running the test project requires the time zone database to be available in the `tzdata` directory.
 
+### Release
+
+Steps for preparing a new release.
+
+1. Update version number in [package/pascaltz.lpk](package/pascaltz.lpk).
+2. Update [CHANGELOG.md](CHANGELOG.md).
+3. Commit, tag with the version number (e.g. `v1.2.3`), push to origin.
+4. Update version number and download link in [opm/update.json](opm/update.json).
+5. Commit, push to origin.
+
+Version numbers must adhere to the [semantic versioning](https://semver.org/) specification.
+
 ### Authors
 
 - 2009 - José Mejuto

@@ -11,6 +11,7 @@ Bugfixes:
 Miscellaneous:
 
 - Added Online Package Manager (OPM) update JSON file.
+- Added instructions for creating a new release.
 
 ## 2.1.1 (2018-02-21)
 
