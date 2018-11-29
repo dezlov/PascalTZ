@@ -2,6 +2,13 @@
 
 This change log contains the highlights of major changes. For details on all finer changes please check the commits history.
 
+## Latest development version
+
+Bugfixes:
+
+- Extended allowed time specification from 24:00:00 to 25:00:00. The 25:00:00 time introduced in tzdata 2018f, see "Rule Japan 1948 1951".
+- Handle negative static DST offset in Zone definition. For example, see "Europe/Prague" zone definition in tzdata 2018g.
+
 ## 2.1.2 (2018-04-05)
 
 Bugfixes:
