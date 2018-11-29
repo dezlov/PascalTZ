@@ -427,7 +427,7 @@ begin
       NewZone.FixedSaveTime := 0;
       NewZone.RuleName := '';
     end
-    else if RuleName[1] in ['0'..'9'] then
+    else if LooksLikeTime(RuleName) then
     begin
       // Fixed save time offset
       NewZone.FixedSaveTime := TimeToSeconds(RuleName);

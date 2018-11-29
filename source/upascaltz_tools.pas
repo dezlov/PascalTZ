@@ -51,6 +51,7 @@ function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
 function DayNameToNumber(const ADayName: AsciiString): TTZWeekDay;
 function SecondsToShortTime(const ASeconds: Integer): String;
 function SecondsToTime(const ASeconds: Integer; AAllowShortTime: Boolean = False): String;
+function LooksLikeTime(const ATime: AsciiString): Boolean;
 function TimeToSeconds(const ATime: AsciiString; AStrickTimeRange: Boolean = True): Integer;
 function GregorianDateToJulianDays(const Value: TTZDateTime): Integer;
 function JulianDaysToGregorianDate(const Value: Integer): TTZDateTime;
@@ -604,6 +605,26 @@ begin
     if S < 10 then
       Result := Result + '0';
     Result := Result + IntToStr(S);
+  end;
+end;
+
+// A fast and crude guess of whether a string looks like time.
+function LooksLikeTime(const ATime: AsciiString): Boolean;
+begin
+  // Time could be expressed in:
+  //   [-]h = hours
+  //   [-]h:m = hours:minutes
+  //   [-]h:m:s = hours:minutes:seconds
+  Result := False;
+  if Length(ATime) > 0 then
+  begin
+    if ATime[1] in ['0'..'9'] then
+      Result := True
+    else if ATime[1] = '-' then
+    begin
+      if Length(ATime) > 1 then
+        Result := ATime[2] in ['0'..'9'];
+    end;
   end;
 end;
 
