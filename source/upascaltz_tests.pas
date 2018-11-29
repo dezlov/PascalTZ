@@ -287,6 +287,9 @@ begin
   CheckEquals(TimeToSeconds('23:59:59'), SecsPerDay - 1);
   CheckEquals(TimeToSeconds('24:00:00'), SecsPerDay);
   CheckEquals(TimeToSeconds('-24:00:00'), -SecsPerDay);
+  CheckEquals(TimeToSeconds('24:59:59'), SecsPerDay + SecsPerHour - 1);
+  CheckEquals(TimeToSeconds('25:00:00'), SecsPerDay + SecsPerHour);
+  CheckEquals(TimeToSeconds('-25:00:00'), -SecsPerDay - SecsPerHour);
 end;
 
 procedure TTZTestCaseUtils.TestInvalidTimeToSeconds;
@@ -296,10 +299,10 @@ begin
   CheckFalse(TryStrictTimeToSeconds('100'));
   CheckFalse(TryStrictTimeToSeconds('59'));
   CheckFalse(TryStrictTimeToSeconds('59:59'));
-  CheckFalse(TryStrictTimeToSeconds('24:00:01'));
-  CheckFalse(TryStrictTimeToSeconds('24:59:59'));
-  CheckFalse(TryStrictTimeToSeconds('25:00:00'));
-  CheckFalse(TryStrictTimeToSeconds('-25:00:00'));
+  CheckFalse(TryStrictTimeToSeconds('25:00:01'));
+  CheckFalse(TryStrictTimeToSeconds('25:59:59'));
+  CheckFalse(TryStrictTimeToSeconds('26:00:00'));
+  CheckFalse(TryStrictTimeToSeconds('-26:00:00'));
 end;
 
 function TTZTestCaseUtils.TryStrictTimeToSeconds(const ATime: String): Boolean;

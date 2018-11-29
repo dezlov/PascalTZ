@@ -74,7 +74,8 @@ type
   TTZDay    = 1..31;
 
   // Time component types are used for strict time range checking.
-  TTZHour   = 0..24; // allow for 24:00:00 notation!
+  // Note: 25:00:00 time introduced in tzdata 2018f, see "Rule Japan 1948 1951".
+  TTZHour   = 0..25;
   TTZMinute = 0..59;
   TTZSecond = 0..59;
 
@@ -83,7 +84,8 @@ type
 
 const
   // Max allowed time specification as a total number of seconds.
-  TZ_MAX_TIME_VALUE_SECONDS = 24 * 60 * 60; // 24:00:00
+  // Note: 25:00:00 time introduced in tzdata 2018f, see "Rule Japan 1948 1951".
+  TZ_MAX_TIME_VALUE_SECONDS = 25 * 60 * 60;
 
   // Used for identifying unspecified dates in future, i.e. "max" keyword in rules.
   TZ_YEAR_MAX = 9999;
