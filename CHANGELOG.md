@@ -2,7 +2,7 @@
 
 This change log contains the highlights of major changes. For details on all finer changes please check the commits history.
 
-## Latest development version
+## 2.1.3 (2019-08-15)
 
 Bugfixes:
 
