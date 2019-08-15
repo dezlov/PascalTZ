@@ -43,8 +43,10 @@ function ExtractTimeFormDefault(var TimeStr: AsciiString; const Default: TTZTime
 function ParseUntilFields(const AIterator: TTZLineIterate; out ATimeForm: TTZTimeForm;
   const ADefaultTimeForm: TTZTimeForm): TTZDateTime;
 procedure MacroSolver(var ADate: TTZDateTime; const ADayString: AsciiString);
-function MacroFirstWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay): TTZDay;
-function MacroLastWeekDay(const ADate: TTZDateTime;const AWeekDay: TTZWeekDay): TTZDay;
+function MacroFirstWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDateTime;
+function MacroLastWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDateTime;
+function FirstDayOfMonth(const ADate: TTZDateTime): TTZDateTime;
+function LastDayOfMonth(const ADate: TTZDateTime): TTZDateTime;
 function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
 function IsLeapYear(const AYear: integer): Boolean;
 function WeekDayToString(const AWeekDay: TTZWeekDay): AsciiString;
@@ -322,6 +324,21 @@ begin
   raise TTZException.CreateFmt('Invalid short month name "%s"', [AMonthName]);
 end;
 
+function FirstDayOfMonth(const ADate: TTZDateTime): TTZDateTime;
+begin
+  Result := ADate;
+  Result.Day := 1;
+end;
+
+function LastDayOfMonth(const ADate: TTZDateTime): TTZDateTime;
+begin
+  Result := ADate;
+  if IsLeapYear(ADate.Year) then
+    Result.Day := TTZMonthDaysLeapYearCount[ADate.Month]
+  else
+    Result.Day := TTZMonthDaysCount[ADate.Month];
+end;
+
 function WeekDayOf(const ADate: TTZDateTime): TTZWeekDay;
 var
   TempYear: Integer;
@@ -526,22 +543,22 @@ begin
     if ConditionOp='>' then
     begin
       ADate.Day:=j+1;
-      ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
+      ADate:=MacroFirstWeekDay(ADate,WeekDay);
     end
     else if ConditionOp='>=' then
     begin
       ADate.Day:=j;
-      ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
+      ADate:=MacroFirstWeekDay(ADate,WeekDay);
     end
     else if ConditionOp='<' then
     begin
       ADate.Day:=j-1;
-      ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
+      ADate:=MacroLastWeekDay(ADate,WeekDay);
     end
     else if ConditionOp='<=' then
     begin
       ADate.Day:=j;
-      ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
+      ADate:=MacroLastWeekDay(ADate,WeekDay);
     end
     else
       raise TTZException.Create('Macro expansion not possible: Unknown condition operator');
@@ -552,14 +569,12 @@ begin
     if LeftStr(ADayString,5)='first' then
     begin
       WeekDay:=DayNameToNumber(Copy(ADayString,6,Length(ADayString)-5));
-      ADate.Day:=Low(TTZDay);
-      ADate.Day:=MacroFirstWeekDay(ADate,WeekDay);
+      ADate:=MacroFirstWeekDay(FirstDayOfMonth(ADate),WeekDay);
     end
     else if LeftStr(ADayString,4)='last' then
     begin
       WeekDay:=DayNameToNumber(Copy(ADayString,5,Length(ADayString)-4));
-      ADate.Day:=High(TTZDay);
-      ADate.Day:=MacroLastWeekDay(ADate,WeekDay);
+      ADate:=MacroLastWeekDay(LastDayOfMonth(ADate),WeekDay);
     end
     else
       raise TTZException.Create('Macro expansion not possible: Unrecognised macro');
@@ -725,67 +740,44 @@ begin
   end;
 end;
 
-function MacroFirstWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDay;
+function MacroFirstWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDateTime;
 var
-  FirstWDInMonth: TTZWeekDay;
-  TheDay: Integer;
+  ShiftNumDays: Integer;
+  SourceWeekDay: TTZWeekDay;
 begin
-  FirstWDInMonth := WeekDayOf(ADate);
-  TheDay := ADate.Day;
+  SourceWeekDay := WeekDayOf(ADate);
 
-  if FirstWDInMonth < AWeekDay then
-    Inc(TheDay, (Integer(AWeekDay)-Integer(FirstWDInMonth)))
-  else if FirstWDInMonth>AWeekDay then
-    Inc(TheDay, 7-(Integer(FirstWDInMonth)-Integer(AWeekDay)));
-
-  if IsLeapYear(ADate.Year) then
-  begin
-    if TheDay>TTZMonthDaysLeapYearCount[ADate.Month] then
-      TheDay := 0; // Invalidate day
-  end
+  if SourceWeekDay < AWeekDay then
+    ShiftNumDays := Integer(AWeekDay) - Integer(SourceWeekDay)
+  else if SourceWeekDay > AWeekDay then
+    ShiftNumDays := 7 - (Integer(SourceWeekDay) - Integer(AWeekDay))
   else
-  begin
-    if TheDay>TTZMonthDaysCount[ADate.Month] then
-      TheDay := 0; // Invalidate day
-  end;
+    ShiftNumDays := 0;
 
-  if TheDay < 1 then
-    raise TTZException.CreateFmt('No valid first week day for "%s" after %.4d.%.2d.%.2d',
-      [WeekDayToString(AWeekDay), ADate.Year, ADate.Month, ADate.Day]);
-
-  Result := TheDay;
+  if ShiftNumDays <> 0 then
+    Result := IncDays(ADate, ShiftNumDays)
+  else
+    Result := ADate;
 end;
 
-function MacroLastWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDay;
+function MacroLastWeekDay(const ADate: TTZDateTime; const AWeekDay: TTZWeekDay): TTZDateTime;
 var
-  TmpDate: TTZDateTime;
-  LastWDInMonth: TTZWeekDay;
-  TheDay: Integer;
+  ShiftNumDays: Integer;
+  SourceWeekDay: TTZWeekDay;
 begin
-  TmpDate := ADate;
-  if not IsLeapYear(TmpDate.Year) then
-  begin
-    if TmpDate.Day > TTZMonthDaysCount[TmpDate.Month] then
-      TmpDate.Day := TTZMonthDaysCount[TmpDate.Month];
-  end
+  SourceWeekDay := WeekDayOf(ADate);
+
+  if SourceWeekDay < AWeekDay then
+    ShiftNumDays := 7 - (Integer(AWeekDay) - Integer(SourceWeekDay))
+  else if SourceWeekDay > AWeekDay then
+    ShiftNumDays := Integer(SourceWeekDay) - Integer(AWeekDay)
   else
-  begin
-    if TmpDate.Day > TTZMonthDaysLeapYearCount[TmpDate.Month] then
-      TmpDate.Day := TTZMonthDaysLeapYearCount[TmpDate.Month];
-  end;
+    ShiftNumDays := 0;
 
-  LastWDInMonth:=WeekDayOf(TmpDate);
-  TheDay:=TmpDate.Day;
-  if LastWDInMonth < AWeekDay then
-    Dec(TheDay, 7-(integer(AWeekDay)-integer(LastWDInMonth)))
-  else if LastWDInMonth > AWeekDay then
-    Dec(TheDay, (integer(LastWDInMonth)-integer(AWeekDay)));
-
-  if TheDay < 1 then
-    raise TTZException.CreateFmt('No valid last week day for "%s" before %.4d.%.2d.%.2d',
-      [WeekDayToString(AWeekDay), ADate.Year, ADate.Month, ADate.Day]);
-
-  Result := TheDay;
+  if ShiftNumDays <> 0 then
+    Result := IncDays(ADate, -ShiftNumDays)
+  else
+    Result := ADate;
 end;
 
 function DateTimeToStr(const ADate: TTZDateTime): String;

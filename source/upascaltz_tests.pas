@@ -48,11 +48,13 @@ type
 
   TTZTestCaseUtils = class(TTestCase)
   private
+    procedure CheckMacroWeekDay(const DateIn, DateOut: String; WeekDay: TTZWeekDay; FirstOrLast: Boolean);
     procedure CheckMacroSolver(const DateIn, DateOut: TDateTime; const MacroCondition: String);
     procedure CheckMacroSolver(const DateIn, DateOut: String; const MacroCondition: String);
     procedure CheckFixTime(const T1, T2: TTZDateTime);
     function TryStrictTimeToSeconds(const ATime: String): Boolean;
   published
+    procedure TestMacroWeekDay;
     procedure TestMacroSolver;
     procedure TestFixTime;
     procedure TestCompareDates;
@@ -67,6 +69,9 @@ const
   TZ_DEFAULT_VECTOR_FILE_MASK = '*.*';
 
 implementation
+
+const
+  NL = LineEnding;
 
 procedure TTZTestSetup.OneTimeSetup;
 begin
@@ -122,6 +127,47 @@ begin
   end;
 end;
 
+procedure TTZTestCaseUtils.CheckMacroWeekDay(const DateIn, DateOut: String;
+  WeekDay: TTZWeekDay; FirstOrLast: Boolean);
+var
+  ActualDateOut: String;
+begin
+  if FirstOrLast then
+  begin
+    ActualDateOut := TZFormatDateTime(TZDateToPascalDate(MacroFirstWeekDay(
+      PascalDateToTZDate(TZParseDateTime(DateIn)), WeekDay)));
+  end
+  else
+  begin
+    ActualDateOut := TZFormatDateTime(TZDateToPascalDate(MacroLastWeekDay(
+      PascalDateToTZDate(TZParseDateTime(DateIn)), WeekDay)));
+  end;
+  if DateOut <> ActualDateOut then
+  begin
+    Fail('MacroWeekDay failed.' + NL +
+      'INPUT DATE:      ' + DateIn + NL +
+      'WEEKEDAY:        ' + WeekDayToString(WeekDay) + NL +
+      'FIRST/LAST:      ' + BoolToStr(FirstOrLast, 'First', 'Last') + NL +
+      'OUTPUT EXPECTED: ' + DateOut + NL +
+      'OUTPUT ACTUAL:   ' + ActualDateOut);
+  end;
+end;
+
+procedure TTZTestCaseUtils.TestMacroWeekDay;
+begin
+  CheckMacroWeekDay('2019-01-01 00:00:00', '2019-01-01 00:00:00', eTZTuesday, True);
+  CheckMacroWeekDay('2019-01-01 00:00:00', '2019-01-01 00:00:00', eTZTuesday, False);
+
+  CheckMacroWeekDay('2019-01-01 00:00:00', '2019-01-07 00:00:00', eTZMonday, True);
+  CheckMacroWeekDay('2019-01-01 00:00:00', '2018-12-31 00:00:00', eTZMonday, False);
+
+  CheckMacroWeekDay('2019-03-01 00:00:00', '2019-03-03 00:00:00', eTZSunday, True);
+  CheckMacroWeekDay('2019-03-01 00:00:00', '2019-02-24 00:00:00', eTZSunday, False);
+
+  CheckMacroWeekDay('1952-10-28 00:00:00', '1952-11-02 00:00:00', eTZSunday, True);
+  CheckMacroWeekDay('1952-10-28 00:00:00', '1952-10-26 00:00:00', eTZSunday, False);
+end;
+
 procedure TTZTestCaseUtils.CheckMacroSolver(const DateIn, DateOut: String;
   const MacroCondition: String);
 begin
@@ -130,8 +176,6 @@ end;
 
 procedure TTZTestCaseUtils.CheckMacroSolver(const DateIn, DateOut: TDateTime;
   const MacroCondition: String);
-const
-  NL = LineEnding;
 var
   TZDT: TTZDateTime;
   DateOutTest: TDateTime;
@@ -183,6 +227,10 @@ begin
     '2015-10-01 16:00:00',
     '2015-10-14 16:00:00',
     'Wed<=20');
+  CheckMacroSolver(
+    '1952-10-01 00:00:00',
+    '1952-11-02 00:00:00',
+    'Sun>=28');
 end;
 
 procedure TTZTestCaseUtils.CheckFixTime(const T1, T2: TTZDateTime);
