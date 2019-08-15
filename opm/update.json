@@ -4,12 +4,12 @@
       "ForceNotify" : false,
       "InternalVersion" : 1,
       "Name" : "pascaltz.lpk",
-      "Version" : "2.1.2.0"
+      "Version" : "2.1.3.0"
     }
   ],
   "UpdatePackageData" : {
     "DisableInOPM" : false,
-    "DownloadZipURL" : "https://github.com/dezlov/PascalTZ/archive/v2.1.2.zip",
+    "DownloadZipURL" : "https://github.com/dezlov/PascalTZ/archive/v2.1.3.zip",
     "Name" : "PascalTZ"
   }
 }
