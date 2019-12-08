@@ -2,6 +2,12 @@
 
 This change log contains the highlights of major changes. For details on all finer changes please check the commits history.
 
+## Latest development version
+
+Bugfixes:
+
+- Handle weekday macros which fall into another month. For example, "Asia/Hong_Kong" zone in tzdata2019b includes weekday macros "Sun>=28" and "Sun>=31".
+
 ## 2.1.3 (2019-08-15)
 
 Bugfixes:
