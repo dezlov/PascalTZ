@@ -4,6 +4,11 @@ This change log contains the highlights of major changes. For details on all fin
 
 ## Latest development version
 
+Enhancements:
+
+- Replaced `.rc` script by `.res` resource file in order to avoid issues with `windres` on some platforms.
+- Added additional high-dpi component icons.
+
 Bugfixes:
 
 - Handle weekday macros which fall into another month. For example, "Asia/Hong_Kong" zone in tzdata2019b includes weekday macros "Sun>=28" and "Sun>=31".
